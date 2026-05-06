@@ -2,6 +2,17 @@
 
 We prepared this note for reviewers who already have the PDF and want to rerun the experiments we actually rely on in the submission, without wading through the rest of the training codebase.
 
+You may download the datasets and model checkpoints from the Huggingface repository we provide below which has been made anonymous to maintain the double blind standard at NeurIPS:
+
+1. **Validation Datasets:** https://anonymous-hf.up.railway.app/a/nz5rqu8ztqrr/
+2. **Hypernet checkpoint:** https://anonymous-hf.up.railway.app/a/0l9u81sqha8e/
+3. **Chebyshev Checkpoint:** https://anonymous-hf.up.railway.app/a/r3hb1guqbrgk/
+4. **DCT checkpoint:** https://anonymous-hf.up.railway.app/a/0etrjqgwjx2i/
+
+If you encounter any issues where the scripts are not working, try pulling the latest source code from the GitHub repository which we have also made anonymous to maintain the double blind standard of NeurIPS. Do note that since you can not clone the repository, you would have to download it as a raw folder or zip file from the following repository link:
+
+Repository Source: https://anonymous.4open.science/r/mark-07B3/README.md
+
 A short map of what matters:
 
 - **Figures** (AQS certificate, synthetic LPV recovery, Markov norm vs. lag): small `analysis/` scripts that write PNGs under `plots/` and a few CSV/JSON audit files under `analysis/results/`.
