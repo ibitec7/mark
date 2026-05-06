@@ -9,7 +9,7 @@ You may download the datasets and model checkpoints from the Huggingface reposit
 3. **Chebyshev Checkpoint:** https://anonymous-hf.up.railway.app/a/r3hb1guqbrgk/
 4. **DCT checkpoint:** https://anonymous-hf.up.railway.app/a/0etrjqgwjx2i/
 
-Download the released Hydra pre-trained checkpoints from this Huggingface repository (which is not anonymized since it is not our work): https://huggingface.co/goombalab/hydra
+Download the released Hydra pre-trained checkpoints from this Huggingface repository for the AQS certificate (which is not anonymized since it is not our work): https://huggingface.co/goombalab/hydra
 
 If you encounter any issues where the scripts are not working, try pulling the latest source code from the GitHub repository which we have also made anonymous to maintain the double blind standard of NeurIPS. Do note that since you can not clone the repository, you would have to download it as a raw folder or zip file from the following repository link:
 
