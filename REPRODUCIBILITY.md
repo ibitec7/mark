@@ -10,7 +10,7 @@ A short map of what matters:
 
 Everything below assumes you cloned this repository and are sitting at its root.
 
-> **_NOTE:_**  Please read the README.md for this project on how to get setup with the dependencies for this project. We recommend using docker as it is the least likely for any conflicts whereas if you want to run locally then you can use uv.
+> **_NOTE:_**  Please read the README.md for this project on how to get setup with the dependencies for this project. We recommend using docker as it is the least likely for any conflicts but if you want to run locally then you can use uv.
 
 ---
 
