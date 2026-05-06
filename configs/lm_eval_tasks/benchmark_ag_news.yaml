@@ -1,0 +1,20 @@
+task: benchmark_ag_news
+dataset_path: parquet
+dataset_kwargs:
+  data_files: data/benchmarks/ag_news/test-00000-of-00001.parquet
+output_type: loglikelihood_rolling
+test_split: train
+doc_to_text: ""
+doc_to_target: "{{text}}"
+process_docs: !function benchmark_preprocess.filter_nonempty
+should_decontaminate: false
+# See ``benchmark_wikitext.yaml`` — word PPL is omitted (token vs whitespace mismatch).
+metric_list:
+  - metric: byte_perplexity
+    aggregation: weighted_perplexity
+    higher_is_better: false
+  - metric: bits_per_byte
+    aggregation: bits_per_byte
+    higher_is_better: false
+metadata:
+  version: 1

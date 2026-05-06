@@ -1,0 +1,17 @@
+colorama==0.4.6
+datasets==4.5.0
+deepeval==3.8.6
+einops==0.8.2
+huggingface_hub==0.36.2
+lightning==2.4.0
+mamba_ssm==2.2.5
+matplotlib==3.10.8
+numpy==2.4.2
+omegaconf==2.3.0
+polars==1.37.1
+pyarrow>=21.0.0
+pytest==9.0.2
+scikit-learn>=1.5.0
+PyYAML==6.0.3
+tqdm==4.67.3
+transformers==4.57.6

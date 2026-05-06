@@ -1,0 +1,50 @@
+# For build
+FROM nvcr.io/nvidia/nemo:25.09
+
+# Set the working directory
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git build-essential python3-dev \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip but avoid breaking existing PyTorch CUDA installation
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# Install ninja for faster compilation
+RUN apt-get install -y ninja-build
+
+# Install packaging to help with version detection
+RUN pip install --no-cache-dir packaging ninja
+
+# (Optional but recommended) install causal-conv1d first
+# The v1.4.0 tag has complete source code including csrc directory
+RUN git clone -b v1.6.0 https://github.com/Dao-AILab/causal-conv1d.git /opt/causal-conv1d \
+    && cd /opt/causal-conv1d \
+    && python -m pip install . --no-build-isolation --no-deps
+
+# Install mamba-ssm from PyPI (will build CUDA extensions)
+RUN git clone -b v2.3.0 https://github.com/state-spaces/mamba.git /opt/mamba \
+     && cd /opt/mamba \
+     && python -m pip install . --no-build-isolation --no-deps
+
+# Patch megatron-core to expose ProcessGroupCollection (alias for ModelCommProcessGroups),
+# required by NeMo 2.7.0 hyena/qwen2vl models but absent in megatron-core 0.14.1.
+RUN echo '' >> /opt/megatron-lm/megatron/core/process_groups_config.py \
+    && echo '# Alias for backwards compatibility with newer NeMo/megatron versions' >> /opt/megatron-lm/megatron/core/process_groups_config.py \
+    && echo 'ProcessGroupCollection = ModelCommProcessGroups' >> /opt/megatron-lm/megatron/core/process_groups_config.py
+
+# Install causal-conv1d from GitHub (PyPI package is incomplete for ARM64)
+# The v1.4.0 tag has complete source code including csrc directory
+# RUN pip install git+https://github.com/Dao-AILab/causal-conv1d.git@v1.4.0 --no-build-isolation
+
+# Install mamba-ssm from GitHub as well for consistency
+#RUN pip install git+https://github.com/state-spaces/mamba.git@v2.2.5 --no-build-isolation
+
+#COPY requirements.txt requirements.txt
+#RUN pip install --no-cache-dir -r requirements.txt --prefer-binary
+
+# (Optional) Verify by running Python test
+# CMD ["python3", "-c", "from mamba_ssm import Mamba; print('mamba_ssm installed!')"]

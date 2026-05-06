@@ -1,0 +1,79 @@
+# Benchmark Configuration — Chebyshev Stage 3
+batch_size: 1
+epochs: 1
+stage: 3
+unfrozen_ratio: 0.3
+ckpt_weights_only: True
+checkpoint_dir: "./models/hydra_mark_chebyshev"
+train_data_dir: "./data/train_shards3"
+val_data_dir: "./data/benchmarks"
+weights_path: "./models/hydra_chebyshev_mark.pt"
+shuffle: False
+pad_length: 4096
+learning_rate_mark: 6.0e-4
+learning_rate_hydra: 3.0e-5
+learning_rate_cls: 1.0e-4
+num_workers: 4
+matmul_precision: "high"
+multi_shot: False
+intervals: 3
+is_prenorm: False
+accumulate_grad_batches: 1
+cart: True
+cart_p: 0.45
+cart_scale: 1.0
+benchmark: True
+benchmark_path: "./data/benchmark_results/chebyshev_stage3.json"
+
+lr_scheduler:
+  type: "none"
+
+trainer:
+  accelerator: "gpu"
+  devices: 1
+  num_sanity_val_steps: 0
+  accumulate_grad_batches: 1
+  precision: "bf16-true"
+  enable_checkpointing: False
+  default_root_dir: "./models/hydra_mark_chebyshev"
+
+wandb:
+  project: "hydra-benchmark"
+  model_name: "HydraForMaskedLM"
+  watch_log: "all"
+  log_freq: 20
+
+hydra_config:
+  hidden_size: 768
+  vocab_size: 30522
+  type_vocab_size: 2
+  pad_token_id: 0
+  use_position_embeddings: False
+  max_position_embeddings: 4096
+  use_timestep_embeddings: True
+  layer_norm_eps: 1.0e-12
+  dropout: 0.0
+  max_timestep_embeddings: 1000
+  current_timestep: 0
+  d_state: 64
+  d_conv: 7
+  head_dim: 64
+  expand: 2
+  chunk_size: 256
+  is_prenorm: False
+  use_eff_compute: False
+  gradient_checkpointing: True
+  num_hidden_layers: 23
+  guider_hidden_layers: 12
+  device: "cpu"
+  pool_all: False
+  mark_kernel: "chebyshev"
+  mark_ensemble: False
+  rank: 2
+  degree: 5
+  L_timepoints: 256
+  n_freqs: 8
+  mark_mlp_dim: 256
+  embedding_dim: 128
+  hidden_act: "swish"
+  initializer_range: 0.02

@@ -1,0 +1,87 @@
+# Training Configurations
+batch_size: 4         # Batch size set to 4/8 for the A100 GPU, 4/8 for the GH200 or GB200.
+epochs: 5
+checkpoint_dir: "./checkpoints/hydra"
+train_data_dir: "./data/shards"
+val_data_dir: "./data/val_shards"
+shuffle: True
+use_early_stopping: False
+max_patience_counter: 5
+min_delta: 0.01
+use_gradient_clipping: True
+gradient_clipping_norm: 0.5
+pad_length: 4096                 # Padding length for input sequences set to 4096 for the A100 GPU, 8192 for GH200 or GB200.
+learning_rate: 6.0e-5
+no_cache: False
+num_workers: 8
+matmul_precision: "high"
+multi_shot: False               # Whether to use multi-shot training for each batch. Default is set to False.
+intervals: 3                   # Number of multi-shot intervals for inference simulation during training.
+is_prenorm: False            # Whether to use prenorm architecture in Hydra model. Default is set to False.
+accumulate_grad_batches: 4        # Whether to use a gradient accumulation on mini-batches for training loop.
+cart: False                     # Whether to use CART loss weighting mechanism. Default is set to True.
+cart_p: 0.45                     # The p parameter for CART loss weighting mechanism. Default is set to 0.45.
+cart_scale: 1.0                 # The scale parameter for CART loss weighting mechanism. Default is set to 1.0.
+
+# Custom Learning Rate Scheduler configuration.
+lr_scheduler:
+  type: "cosine"          # choices: cosine | poly | inverse_sqrt | plateau | none
+  warmup_steps: 100
+  total_steps: 4000      # approximate (epochs * steps_per_epoch)
+  min_lr_ratio: 0.1
+  polynomial:
+    end_lr_ratio: 0.0
+    power: 1.0
+  plateau:
+    factor: 0.5
+    patience: 3
+    min_lr: 1.0e-6
+
+# Nemo Lightning Configurations
+trainer:
+  accelerator: "gpu"
+  devices: -1
+  strategy: "ddp"                 # Use "ddp" for multi-GPU training.
+  # max_steps: 800
+  limit_val_batches: 100
+  limit_train_batches: 50
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 0
+  accumulate_grad_batches: 1
+  precision: "bf16"
+  enable_checkpointing: True
+  default_root_dir: "./checkpoints/hydra"  # This is the checkpoint directory for the lightning trainer.
+
+wandb:
+  project: "hydra-training"
+  model_name: "HydraForMaskedLM"
+  watch_log: "all"
+  log_freq: 20
+
+hydra_config:
+  hidden_size: 1536
+  vocab_size: 30522
+  type_vocab_size: 2
+  pad_token_id: 0
+  use_position_embeddings: False
+  max_position_embeddings: 4096
+  use_timestep_embeddings: True
+  layer_norm_eps: 1.0e-12
+  dropout: 0.0
+  max_timestep_embeddings: 1000
+  current_timestep: 0
+  d_state: 128
+  d_conv: 7
+  head_dim: 128
+  expand: 4
+  chunk_size: 256
+  is_prenorm: False
+  num_hidden_layers: 64
+  guider_hidden_layers: 12
+  use_eff_compute: False
+  gradient_checkpointing: False        # Whether to checkpoint gradients in the Encoder layer
+  device: "cpu"
+  pool_all: False
+  hidden_act: "swish"
+  initializer_range: 0.02
+  calculate_per_token_loss: False

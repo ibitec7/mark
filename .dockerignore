@@ -1,0 +1,13 @@
+.pytest_cache
+__pycache__
+profiles
+profiler_traces
+src/__pycache__/*
+src/.pytest_cache/*
+src/test.ipynb
+logs/*
+tests/__pycache__/*
+checkpoints/*
+tests/*.ipynb
+src/*.ipynb
+data/*

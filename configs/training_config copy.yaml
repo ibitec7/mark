@@ -1,0 +1,110 @@
+# Training Configurations
+batch_size: 16                  # Batch size set to 4/8 for the A100 GPU
+epochs: 2
+stage: 3                    # Training stage: 1 - Pretraining, 2 - Intermediate Fine-tuning, 3 - Task-specific Fine-tuning 
+unfrozen_ratio: 0.3          # Ratio of Hydra layers to unfreeze during stage 2. Set to 0.3 to unfreeze last 30% layers. 
+ckpt_weights_only: True      # Whether to load only model weights from checkpoint. Default is set to True.
+checkpoint_dir: "./checkpoints/hydra_mark"
+train_data_dir: "./data/train_shards"               # Change to the correct data directory for the stage
+val_data_dir: "./data/val_shards"
+weights_path: "./models/hydra_chebyshev_mark"     # Change to ./models/hydra_hypernet_mark.pt for Hypernet or ./models/hydra_chebyshev_mark.pt for Chebyshev kernel.
+shuffle: True
+use_early_stopping: False
+max_patience_counter: 5
+min_delta: 0.01
+use_gradient_clipping: True
+gradient_clipping_norm: 1.0
+pad_length: 4096                # Padding length for input sequences set to 4096 for the A100 GPU, 8192 for GH200 or GB200.
+learning_rate_mark: 6.0e-4    # Learning rate for MaRK parameters doesnt matter in stage 3
+learning_rate_hydra: 3.0e-5  # Learning rate for Hydra base model parameters doesnt matter in stage 1 and 3
+learning_rate_cls: 1.0e-4    # Learning rate for classification head parameters doesnt matter in stage 1 and 2
+no_cache: False
+num_workers: 8
+matmul_precision: "high"
+multi_shot: False               # Whether to use multi-shot training for each batch. Default is set to False.
+intervals: 3                    # Number of multi-shot intervals for inference simulation during training.
+is_prenorm: False               # Whether to use prenorm architecture in Hydra model. Default is set to False.
+accumulate_grad_batches: 2      # Whether to use a gradient accumulation on mini-batches for training loop.
+cart: True                      # Whether to use CART loss weighting mechanism. Default is set to True.
+cart_p: 0.45                    # The p parameter for CART loss weighting mechanism. Default is set to 0.45.
+cart_scale: 1.0                 # The scale parameter for CART loss weighting mechanism. Default is set to 1.0.
+distillation: False             # Whether to use distillation loss during training. Default is set to False.
+
+# Custom Learning Rate Scheduler configuration.
+lr_scheduler:
+  type: "cosine"          # choices: cosine | poly | inverse_sqrt | plateau | none
+
+  # !! Remember to adjust total_steps and warmup_steps according to batch_size and epochs.
+  warmup_steps: 300
+  total_steps: 5625      # approximate (epochs * steps_per_epoch)
+  min_lr_ratio: 0.1
+  polynomial:
+    end_lr_ratio: 0.0
+    power: 1.0
+  plateau:
+    factor: 0.5
+    patience: 3
+    min_lr: 1.0e-6
+
+# Nemo Lightning Configurations
+trainer:
+  accelerator: "gpu"
+  devices: -1
+  # strategy: "ddp"                 # Use "ddp" for multi-GPU training.
+  # max_steps: 800
+  # limit_val_batches: 1000
+  # limit_train_batches: 1000
+  # val_check_interval: 0.2
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 0
+  accumulate_grad_batches: 1
+  precision: "bf16-mixed"                  # Set to "bf16-true" for pure bf16 training if supported by hardware.
+  enable_checkpointing: True
+  default_root_dir: "./checkpoints/hydra_mark"  # This is the checkpoint directory for the lightning trainer.
+
+wandb:
+  project: "hydra-training"
+  model_name: "HydraForMaskedLM"
+  watch_log: "all"
+  log_freq: 20
+
+wandb:
+  project: "hydra-training"
+  model_name: "HydraForMaskedLM"
+  watch_log: "all"
+  log_freq: 20
+# Hydra Core model configuration.
+hydra_config:
+  hidden_size: 768
+  vocab_size: 30522
+  type_vocab_size: 2
+  pad_token_id: 0
+  use_position_embeddings: False
+  max_position_embeddings: 4096
+  use_timestep_embeddings: True
+  layer_norm_eps: 1.0e-12
+  dropout: 0.0
+  max_timestep_embeddings: 1000
+  current_timestep: 0
+  d_state: 64
+  d_conv: 7
+  head_dim: 64
+  expand: 2
+  chunk_size: 256
+  is_prenorm: False           # Whether to use prenorm architecture in Hydra model. Default is set to False.
+  use_eff_compute: False       # Whether to use fused kernels for the Hydra
+  gradient_checkpointing: True        # Whether to checkpoint gradients in the Encoder layer
+  num_hidden_layers: 23
+  guider_hidden_layers: 12
+  device: "cpu"             # This is only for weight transfer, the whole model is transferred to GPU once built.
+  pool_all: False
+  mark_kernel: "chebyshev"         # choices: hypernet | chebyshev | dct | None
+  mark_ensemble: False            # Whether to use ensemble of MaRK adapters for better parallelism using CUDA streams. Default set to False.
+  rank: 2                        # The rank of the low-rank matrices B and C in MaRK hypernet
+  degree: 5                      # The degree of the Chebyshev polynomial in MaRK chebyshev kernel
+  L_timepoints: 256              # Number of timepoints sampled for the DCT kernel in MaRK (tells the resolution of the kernel)
+  n_freqs: 8                     # Number of frequencies for the Fourier basis table in MaRK hypernet
+  mark_mlp_dim: 256
+  hidden_act: "swish"
+  initializer_range: 0.02
+  embedding_dim: 128
