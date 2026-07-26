@@ -265,7 +265,8 @@ class HydraUnpadMixer(nn.Module):
                 n_freqs=config.n_freqs,
                 mark_mlp_dim=config.mark_mlp_dim,
                 embedding_dim=config.embedding_dim,
-                chunk_size=min(config.chunk_size, config.max_position_embeddings)
+                chunk_size=min(config.chunk_size, config.max_position_embeddings),
+                ablation_mode=getattr(config, "ablation_mode", "full"),
             )
         else:
             self.mixer: Guider = Guider(

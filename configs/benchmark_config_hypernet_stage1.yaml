@@ -77,3 +77,4 @@ hydra_config:
   embedding_dim: 128
   hidden_act: "swish"
   initializer_range: 0.02
+  ablation_mode: "full"

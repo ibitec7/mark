@@ -49,6 +49,7 @@ class Hydra(nn.Module):
             L_timepoints: int=256,        # Number of timepoints sampled for the DCT kernel in MaRK (tells the resolution of the kernel)
             n_freqs: int=8,               # Number of frequencies for the Fourier basis table in MaRK hypernet
             mark_mlp_dim: int=256,        # The hidden dimension of the MaRK hypernet MLP
+            ablation_mode: str="full",     # Ablation mode for selective parameter modulation (full|all_except_A|A_only|dt_only|BC_only|all_except_dt|D_only|none)
             # Optimization parameters
             chunk_size=256,         # Split input sequences into chunks
             use_eff_compute=False,
@@ -85,6 +86,7 @@ class Hydra(nn.Module):
 
         self.mark_ensemble = mark_ensemble
         self.embedding_dim = embedding_dim
+        self.ablation_mode = ablation_mode
 
         if mark_kernel == "hypernet" and not self.mark_ensemble:
             self.mark = Hypernet(
@@ -331,6 +333,13 @@ class Hydra(nn.Module):
                 self._pre_mark_C = None
 
         # explore using different timestep conditioning within a batch for training here. It may mean repeated mamba kernel launches but will stabilize training even more.
+        # === Capture originals for ablation ===
+        _orig_A_log = self.A_log
+        _orig_dt_bias = self.dt_bias
+        _orig_D = self.D
+        _orig_B = B.clone()
+        _orig_C = C.clone()
+
         if not self.mark_ensemble:
             A_log, B, C, dt_bias, D = self.mark.forward(
                 cond=cond_embedding,
@@ -355,7 +364,24 @@ class Hydra(nn.Module):
             B = B * B_scale + B_shift
             C = C * C_scale + C_shift
 
-
+        # === ABLATION RESTORATION: selectively revert modified params to originals ===
+        mode = self.ablation_mode
+        if mode == "full":
+            pass  # no restoration — all params modulated
+        elif mode == "all_except_A":
+            A_log = _orig_A_log
+        elif mode == "A_only":
+            B, C, dt_bias, D = _orig_B, _orig_C, _orig_dt_bias, _orig_D
+        elif mode == "dt_only":
+            A_log, B, C, D = _orig_A_log, _orig_B, _orig_C, _orig_D
+        elif mode == "BC_only":
+            A_log, dt_bias, D = _orig_A_log, _orig_dt_bias, _orig_D
+        elif mode == "all_except_dt":
+            dt_bias = _orig_dt_bias
+        elif mode == "D_only":
+            A_log, B, C, dt_bias = _orig_A_log, _orig_B, _orig_C, _orig_dt_bias
+        elif mode == "none":
+            A_log, B, C, dt_bias, D = _orig_A_log, _orig_B, _orig_C, _orig_dt_bias, _orig_D
         # dt = controls the discretization for the continuous SSM using ZOH method (Zero-Order Hold) keeping input constant over dt
         dt = torch.cat((dt[:, :, :self.n_heads], torch.flip(dt[:, :, self.n_heads:], (1,))), dim=0)     # Concatenate the upper and lower halves after reversing upper half
         dt = F.softplus(dt + dt_bias)

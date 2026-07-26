@@ -157,6 +157,7 @@ class HydraForMaskedLMConfig(PretrainedConfig):
         embedding_dim: int = 256,
         hidden_act: str = "swish",
         initializer_range: float = 0.02,
+        ablation_mode: str = "full",
         **kwargs,
     ):
         super().__init__(pad_token_id=pad_token_id, **kwargs)
@@ -197,6 +198,7 @@ class HydraForMaskedLMConfig(PretrainedConfig):
         self.embedding_dim = embedding_dim
         self.hidden_act = hidden_act
         self.initializer_range = initializer_range
+        self.ablation_mode = ablation_mode
 
 class GuiderCore(nn.Module):
     """
