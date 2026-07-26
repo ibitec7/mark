@@ -34,9 +34,16 @@ Path("logs").mkdir(exist_ok=True)
 logger = log_setup("AblationLogger", LOG_FILE, LOG_LEVEL)
 
 # ---- Ablation modes ---------------------------------------------------------
+# The reviewer (Axfu Q2) only needs all_except_A to isolate A's contribution
+# vs Mamba-style selection. Other modes are available for completeness via --modes.
 ABLATION_MODES = [
-    "full",           # All 5 params modulated (baseline)
     "all_except_A",   # ★ Reviewer Q2: freeze A, modulate B,C,D,Δ
+]
+
+# All supported modes (for --modes override):
+ALL_MODES = [
+    "full",           # All 5 params modulated (baseline — already in Table 1)
+    "all_except_A",   # ★ Reviewer Q2
     "A_only",         # Only A modulated
     "dt_only",        # Only Δ modulated
     "BC_only",        # Only B,C modulated (Mamba-style selection)
@@ -417,7 +424,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--modes",
         nargs="+",
         default=None,
-        help=f"Ablation modes to run (default: all {len(ABLATION_MODES)})",
+        help=f"Ablation modes to run (default: 'all_except_A' only — the reviewer-relevant one). "
+             f"All supported: {{{', '.join(ALL_MODES)}}}",
     )
     parser.add_argument(
         "--kernels",

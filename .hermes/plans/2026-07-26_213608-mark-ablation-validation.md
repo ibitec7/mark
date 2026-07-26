@@ -137,32 +137,17 @@ Note: the branch must NOT include generated results or data symlinks — only so
 
 ## Commands for A100 80GB
 
-### Setup (once):
+### Default (reviewer-relevant only):
 ```bash
-cd /home/admin/Desktop/mark
-git fetch origin
-git checkout rebuttal
-# Ensure checkpoints exist at expected paths, or override:
+cd /home/admin/Desktop/mark && python -m src.ablation
+# Runs: 3 kernels × all_except_A = 3 evaluations on WikiText
 ```
 
-### Smoke test (verify code works):
+`full` mode is omitted by default — those scores already exist in Table 1 of the paper.
+
+### Smoke test:
 ```bash
 python -m src.ablation --limit-val-batches 5
-```
-
-### Full run:
-```bash
-python -m src.ablation \
-  --wikitext-dir data/wikitext \
-  --output-dir data/ablation_results
-```
-
-### With custom checkpoint directories:
-```bash
-python -m src.ablation \
-  --checkpoint-dir chebyshev=/models/run_a \
-  --checkpoint-dir hypernet=/models/run_b \
-  --checkpoint-dir dct=/models/run_c
 ```
 
 ### Results will be in:
