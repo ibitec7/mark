@@ -1,0 +1,9 @@
+2026-07-27 05:11:44 - [INFO] - Loading source weights from: models/hydra_bert_23layers.pt
+2026-07-27 05:11:45 - [INFO] - Loading config from: configs/benchmark_config_chebyshev_stage1.yaml
+2026-07-27 05:11:47 - [INFO] - Hydra model initialized successfully.
+2026-07-27 05:11:47 - [INFO] - Embedding layer weights transferred successfully.
+2026-07-27 05:11:47 - [INFO] - Encoder layer weights transferred successfully.
+2026-07-27 05:11:47 - [INFO] - Prediction head weights transferred successfully.
+2026-07-27 05:11:47 - [INFO] - Prediction transform layer weights transferred successfully.
+2026-07-27 05:11:47 - [INFO] - All model parameters have been transferred successfully!
+2026-07-27 05:11:47 - [INFO] - Hydra model state dict saved to: models/hydra_bert_23layers_mark_base.pt
