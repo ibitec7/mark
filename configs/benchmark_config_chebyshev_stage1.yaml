@@ -7,7 +7,7 @@ ckpt_weights_only: False
 checkpoint_dir: "./models/hydra_mark_chebyshev"
 train_data_dir: "./data/train_shards1"
 val_data_dir: "./data/benchmarks"
-weights_path: "./models/hydra_chebyshev_mark.pt"
+weights_path: "./models/hydra_bert_23layers_mark_base.pt"
 shuffle: False
 pad_length: 4096
 learning_rate_mark: 6.0e-4
