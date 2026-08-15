@@ -1,0 +1,33 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["e37e626949e9555d.olean"],
+  "i": "61b3d617704e1298.ilean",
+  "c": "427946a11738f3c0.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/home/admin/Desktop/mark/proofs/.lake/packages/Cli/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/batteries/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/Qq/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/aesop/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/importGraph/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/plausible/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/packages/mathlib/.lake/build/lib/lean:/home/admin/Desktop/mark/proofs/.lake/build/lib/lean /home/admin/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean /home/admin/Desktop/mark/proofs/Proofs/OperatorIdentifiability.lean -o /home/admin/Desktop/mark/proofs/.lake/build/lib/lean/Proofs/OperatorIdentifiability.olean -i /home/admin/Desktop/mark/proofs/.lake/build/lib/lean/Proofs/OperatorIdentifiability.ilean -c /home/admin/Desktop/mark/proofs/.lake/build/ir/Proofs/OperatorIdentifiability.c --setup /home/admin/Desktop/mark/proofs/.lake/build/ir/Proofs/OperatorIdentifiability.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["Proofs.OperatorIdentifiability:deps",
+   [["deps",
+     [["proofs/Proofs:extraDep", [["@proofs:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["Mathlib transitive imports (legacy)", "8fd896a9b3011bd6"],
+        ["Mathlib:importAllArts", "8fc2a9ec06d95bdc"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.28.0, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+   "a96bc04a2e5e9630"],
+  ["/home/admin/Desktop/mark/proofs/Proofs/OperatorIdentifiability.lean",
+   "ff4020e32fbda10a"],
+  ["options",
+   [["-DmaxSynthPendingDepth=3", "c78e353d34de85d4"],
+    ["-Dweak.linter.mathlibStandardSet=true", "8a155799906f2b42"],
+    ["-DrelaxedAutoImplicit=false", "74a2b5546b55be80"],
+    ["-Dpp.unicode.fun=true", "9b94070140457fab"]]],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "d116601c86115c7d"}
