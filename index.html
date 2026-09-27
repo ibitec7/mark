@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models - Syed Ibrahim Omer, Ginny Y. Wong, Xiangyu Zhao">
+  <meta name="description" content="We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.">
+  <meta name="keywords" content="State Space Models, Dynamic Operator Conditioning, Linear Parameter-Varying Systems, Diffusion Language Models, Markov Parameters, Parameter-Efficient Fine-Tuning">
+  <meta name="author" content="Syed Ibrahim Omer, Ginny Y. Wong, Xiangyu Zhao">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="City University of Hong Kong">
+  <meta property="og:title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
+  <meta property="og:description" content="We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.">
+  <meta property="og:url" content="https://ibitec7.github.io/mark-page/">
+  <meta property="og:image" content="static/images/social_preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
+  <meta property="article:published_time" content="2026-01-01T00:00:00.000Z">
+  <meta property="article:author" content="Syed Ibrahim Omer">
+  <meta property="article:section" content="Research">
+  <meta property="article:tag" content="State Space Models">
+  <meta property="article:tag" content="Operator Conditioning">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
+  <meta name="twitter:description" content="We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.">
+  <meta name="twitter:image" content="https://ibitec7.github.io/mark-page/static/images/social_preview.png">
+  <meta name="twitter:image:alt" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
+
+  <!-- Academic/Research Specific -->
+  <meta name="citation_title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
+  <meta name="citation_author" content="Omer, Syed Ibrahim">
+  <meta name="citation_author" content="Wong, Ginny Y.">
+  <meta name="citation_author" content="Zhao, Xiangyu">
+  <meta name="citation_publication_date" content="2026">
+  <meta name="citation_conference_title" content="arXiv Preprint">
+  <meta name="citation_pdf_url" content="https://arxiv.org/pdf/2601.22157">
+
+  <!-- Additional SEO -->
+  <meta name="theme-color" content="#2563eb">
+  <meta name="msapplication-TileColor" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+  <title>MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models</title>
+  <link rel="canonical" href="https://ibitec7.github.io/mark-page/">
+
+  <!-- Favicon and App Icons -->
+  <link rel="icon" href="static/images/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="static/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="static/images/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="static/images/apple-touch-icon.png">
+
+  <!-- Critical CSS - Load synchronously -->
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <!-- Non-critical CSS - Load asynchronously -->
+  <link rel="preload" href="static/css/bulma-carousel.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/bulma-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/fontawesome.all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Fallback for browsers that don't support preload -->
+  <noscript>
+    <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  </noscript>
+
+  <!-- Fonts - Optimized loading -->
+  <!-- KaTeX (self-hosted: stylesheet, runtime and its webfonts) -->
+  <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/bulma-carousel.min.js"></script>
+  <script defer src="static/js/bulma-slider.min.js"></script>
+  <script defer src="static/vendor/katex/katex.min.js"></script>
+  <script defer src="static/vendor/katex/auto-render.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+
+  <!-- Structured Data for Academic Papers -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    "headline": "MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models",
+    "description": "We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.",
+    "author": [
+      {
+        "@type": "Person",
+        "name": "Syed Ibrahim Omer",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "City University of Hong Kong"
+        }
+      },
+      {
+        "@type": "Person",
+        "name": "Ginny Y. Wong",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "NVIDIA AI Technology Center"
+        }
+      },
+      {
+        "@type": "Person",
+        "name": "Xiangyu Zhao",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "City University of Hong Kong"
+        }
+      }
+    ],
+    "datePublished": "2026-01-01",
+    "publisher": {
+      "@type": "Organization",
+      "name": "arXiv"
+    },
+    "url": "https://ibitec7.github.io/mark-page/",
+    "image": "https://ibitec7.github.io/mark-page/static/images/social_preview.png",
+    "keywords": ["State Space Models", "Dynamic Operator Conditioning", "Linear Parameter-Varying Systems", "Diffusion Language Models", "Markov Parameters"],
+    "abstract": "We introduce MaRK (Markov-adapted Recurrent Kernels), a dynamic operator-conditioning framework that maps context vectors directly into bounded modulations of a frozen SSM's recurrence (A), read-in (B), read-out (C), skip (D), and discretization parameters. Viewed through the lens of Linear Parameter-Varying systems, MaRK induces a context-indexed family of Markov parameter sequences, allowing each diffusion timestep to reshape the model's input-output memory kernel.",
+    "isAccessibleForFree": true,
+    "license": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "mainEntity": {
+      "@type": "WebPage",
+      "@id": "https://ibitec7.github.io/mark-page/"
+    },
+    "about": [
+      {
+        "@type": "Thing",
+        "name": "State Space Models"
+      },
+      {
+        "@type": "Thing",
+        "name": "Dynamic Operator Modulation"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+
+  <!-- Scroll to Top Button -->
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <main id="main-content">
+
+  <!-- Title, authors, links and teaser -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">MaRK: Markov-adapted Recurrent Kernels for <br> Dynamic Operator Conditioning in State Space Models</h1>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><a href="https://scholar.google.com/citations?user=s3JJuo8AAAAJ&amp;hl=en" target="_blank" rel="noopener">Syed Ibrahim Omer</a><sup>1</sup></span>,
+              <span class="author-block"><a href="https://scholar.google.com/citations?hl=en&amp;user=UTJiSiUAAAAJ" target="_blank" rel="noopener">Ginny Y. Wong</a><sup>2</sup></span>,
+              <span class="author-block"><a href="https://scholar.google.com/citations?hl=en&amp;user=Nkm9r2IAAAAJ" target="_blank" rel="noopener">Xiangyu Zhao</a><sup>1</sup></span>
+            </div>
+
+            <div class="is-size-5 publication-authors affiliation-line">
+              <span class="author-block"><sup>1</sup> Department of Data Science, City University of Hong Kong</span>
+            </div>
+            <div class="is-size-5 publication-authors affiliation-line">
+              <span class="author-block"><sup>2</sup> NVIDIA AI Technology Center (NVAITC-HK)</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- Paper PDF link -->
+                <span class="link-block">
+                  <a href="https://openreview.net/pdf?id=yIjFWwvG7b" target="_blank" rel="noopener"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper (Coming Soon)</span>
+                  </a>
+                </span>
+
+                <!-- Code repository link -->
+                <span class="link-block">
+                  <a href="https://github.com/ibitec7/mark" target="_blank" rel="noopener"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+
+                <!-- arXiv link -->
+                <span class="link-block">
+                  <a href="https://openreview.net/pdf?id=yIjFWwvG7b" target="_blank" rel="noopener"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv (Coming Soon)</span>
+                  </a>
+                </span>
+              </div>
+
+              <!-- Paper teaser image: below the link buttons, above the TLDR -->
+              <figure class="teaser-figure">
+                <img src="static/images/mark/teaser.png" alt="Overview of MaRK: a context vector (the diffusion timestep) is mapped to bounded, low-rank modulations of a frozen SSM's recurrence, read-in, read-out, skip and discretization parameters.">
+              </figure>
+
+              <!-- TLDR: concise one-paragraph summary, placed directly below the teaser image -->
+              <p class="tldr-text">
+                We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the
+                SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical
+                timestep-dependent memory adaptation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Paper abstract -->
+  <section class="section hero is-light">
+    <div class="container" style="max-width: 800px;">
+      <div class="columns is-centered has-text-centered">
+        <div class="column" style="width:100%;">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p style="font-size: 1.00rem; line-height: 1.65;">
+              State Space Models (SSMs) offer an efficient alternative to Transformers for sequence modeling, yet conditioning pre-trained SSMs for iterative generation typically operates outside the recurrent operator, through input injection or activation modulation. While such mechanisms expose the model to conditioning information, they leave the underlying temporal dynamics fixed. We introduce MaRK (Markov-adapted Recurrent Kernels), a dynamic operator-conditioning framework that maps context vectors directly into bounded modulations of a frozen SSM's recurrence (A), read-in (B), read-out (C), skip (D), and discretization (Δ) parameters. Viewed through the lens of Linear Parameter-Varying systems, MaRK induces a context-indexed family of Markov parameter sequences, allowing each diffusion timestep to reshape the model's input-output memory kernel. We instantiate MaRK on a frozen 111M-parameter Hydra SSM backbone and study three adapter geometries: Hypernet, Chebyshev polynomial, and Discrete Cosine Transform kernels. Since these adapters modify the Markov parameter sequence through low-rank auxiliary maps on the frozen backbone, parameter-efficient fine-tuning arises as a structural consequence of the adaptation mechanism itself, requiring only 7.5&ndash;13M trainable auxiliary parameters to transition from a bidirectional objective to an iterative diffusion regime. The bounded recurrence parameterization further yields an analytic Affine Quadratic Stability certificate for the modulated recurrence. Through synthetic LPV recovery experiments and Markov-operator diagnostics, we show that MaRK recovers coordinate-invariant temporal operators under matched assumptions and produces distinct, stable timestep-conditioned memory profiles. Empirically, the Chebyshev variant yields the strongest performance, achieving an average validation loss of 2.63, followed by the DCT (2.66) and Hypernet (3.60) geometries. Together, these results provide initial evidence that dynamic operator modulation is a principled operator-level conditioning mechanism for adapting SSMs beyond input-stream injection and adaptive normalization.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End paper abstract -->
+
+
+  <!-- Conditioning inside the recurrence -->
+  <section class="section hero is-small">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-full">
+          <div class="content">
+            <div class="level-set has-text-justified">
+              <p>
+                Conditional generation asks a sequence model to change how it behaves as generation proceeds. For a
+                State Space Model that behaviour is the recurrence: the input&ndash;output memory kernel that
+                decides how far back the model looks. Today's conditioning mechanisms deliberately leave that kernel
+                alone:
+              </p>
+              <ol>
+                <li>
+                  <strong>Input-stream injection</strong> concatenates the condition into the sequence. It is cheap, but
+                  it asks the hidden state to carry that signal across positions and lags.
+                </li>
+                <li>
+                  <strong>Adaptive LayerNorm</strong> rescales activations. It works well inside Transformers, but it
+                  remains external to the continuous-time SSM operator.
+                </li>
+              </ol>
+              <p>
+                <strong>MaRK</strong> moves conditioning inside the operator. A context vector (here, the
+                diffusion timestep embedding) is mapped to bounded, low-rank modulations of the frozen backbone's
+                recurrence (A), read-in (B), read-out (C), skip (D) and discretization (&Delta;) parameters. Because that
+                map is bounded and low-rank, the result is a context-indexed family of stable input&ndash;output
+                operators, and parameter-efficient adaptation falls out of the mechanism itself instead of being bolted
+                on afterwards.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Identifiability and stability gallery -->
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="container">
+        <div id="theory-carousel" class="carousel results-carousel">
+          <div class="item">
+            <img src="static/images/mark/identifiability.png" alt="Markov operator error versus number of synthetic trajectories for the Hypernet, Chebyshev and DCT kernels, shown side by side on log-log axes" loading="lazy">
+            <h2 class="subtitle has-text-centered">
+              <em><b>Operator identifiability: Hypernet | Chebyshev | DCT.</b></em> Markov Operator Error
+              \(\mathrm{MOE} = \lVert \mathcal{H}_{\text{true}} - \hat{\mathcal{H}}_{\text{est}} \rVert_F\)
+              (coordinate-invariant, the difference between the true and estimated Markov parameter sequences) against
+              the number of synthetic trajectories, \(N \in [50, 1600]\). All three kernels decay along the
+              \(O(N^{-1/2})\) reference (red dashed); the fitted rates are \(N^{-0.54}\) for Hypernet,
+              \(N^{-0.66}\) for Chebyshev and \(N^{-0.64}\) for DCT. Chebyshev reaches the lowest
+              structured-basis error, and DCT's larger constant is consistent with its extra bandlimited restriction
+              rather than a loss of recoverability.
+            </h2>
+          </div>
+          <div class="item">
+            <img src="static/images/mark/aqs_certificate.png" alt="Per-layer stability margins of the 23-layer pre-trained Hydra SSM at the extreme bounds of MaRK modulation" loading="lazy">
+            <h2 class="subtitle has-text-centered">
+              <em><b>Stability certificate.</b></em> Per-layer stability margin
+              \(\varepsilon_\ell\) of the pre-trained 23-layer Hydra SSM evaluated at the extreme bounds of MaRK
+              modulation. All 23 layers certify with \(\varepsilon_\ell > 0\) using the constructive
+              \(P = I\) Lyapunov function, so the modulated recurrence stays stable for every admissible conditioning
+              context.
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Timestep-conditioned memory -->
+  <section class="section hero is-small">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-full">
+          <div class="content">
+            <div class="level-set has-text-justified">
+              <p>
+                If MaRK really conditions the operator, then each frozen diffusion timestep should come with its
+                own memory kernel
+                \(\mathcal{H}(t) = \{C(t)A^k(t)B(t)\}_{k \geq 0}\).
+                We measure the head-averaged Markov norm \(\|h_k(t)\|_2\) over lags
+                \(k \le 4096\) and compare it with the unmodulated backbone. The curves separate, and because the
+                Markov sequence fixes the transfer function up to a change of state coordinates, that separation is a
+                change of input&ndash;output operator, not merely a timestep-dependent activation gain.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dynamics gallery -->
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="container">
+        <div id="dynamics-carousel" class="carousel results-carousel">
+          <div class="item">
+            <img src="static/images/mark/markov_norm_vs_lag.png" alt="Mean Markov parameter norm versus lag for the Hypernet, Chebyshev and DCT adapters at five diffusion timesteps, compared with the frozen backbone" loading="lazy">
+            <h2 class="subtitle has-text-centered">
+              <em><b>Timestep-conditioned Markov operators.</b></em> Head-resolved mean Markov parameter norm against
+              lag, over lags up to 4096, for the Hypernet, Chebyshev and DCT adapters at
+              \(t \in \{0, 0.25, 0.5, 0.75, 1.0\}\). The dashed curve is the frozen Hydra backbone. Chebyshev forms an
+              ordered family of smooth decay profiles; DCT redistributes energy and crosses the backbone at
+              intermediate lags; Hypernet gives the broadest upward shift at medium and long lags.
+            </h2>
+          </div>
+          <div class="item">
+            <img src="static/images/mark/markov_headseq_heatmap.png" alt="Heatmap of the Markov parameter norm per SSM head over lag and diffusion timestep" loading="lazy">
+            <h2 class="subtitle has-text-centered">
+              <em><b>Head-resolved memory profile.</b></em> Markov parameter norm per SSM head as a function of lag and
+              diffusion timestep. Each row of the map is one head's temporal memory, so the figure exposes how the
+              denoising trajectory reorganises memory across heads rather than applying one global gain.
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Results -->
+  <section class="section hero is-small is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-full">
+          <div class="content">
+
+            <div class="key-stats">
+              <div class="key-stat">
+                <div class="value">2.63</div>
+                <div class="label">Average CART loss for Chebyshev, the strongest of the three kernels</div>
+              </div>
+              <div class="key-stat">
+                <div class="value">7.5&ndash;13M</div>
+                <div class="label">Trainable adapter parameters on a frozen 111M-parameter Hydra SSM</div>
+              </div>
+              <div class="key-stat">
+                <div class="value">23 / 23</div>
+                <div class="label">Layers with a positive Affine Quadratic Stability margin</div>
+              </div>
+            </div>
+
+            <h3 class="title is-4 has-text-centered">Adapter ablation</h3>
+            <div class="ma-table-wrap">
+              <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                  <tr>
+                    <th>Kernel</th>
+                    <th>Params</th>
+                    <th>PTB</th>
+                    <th>WikiText</th>
+                    <th>Lambada</th>
+                    <th>AG News</th>
+                    <th>Arxiv</th>
+                    <th>Avg.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Hypernet</td>
+                    <td>~7.5M</td>
+                    <td>3.03</td>
+                    <td>3.72</td>
+                    <td>3.23</td>
+                    <td>3.90</td>
+                    <td>4.11</td>
+                    <td>3.60</td>
+                  </tr>
+                  <tr>
+                    <td>Chebyshev</td>
+                    <td>~8.0M</td>
+                    <td>2.59</td>
+                    <td><strong>2.67</strong></td>
+                    <td><strong>2.59</strong></td>
+                    <td><strong>2.78</strong></td>
+                    <td><strong>2.53</strong></td>
+                    <td><strong>2.63</strong></td>
+                  </tr>
+                  <tr>
+                    <td>DCT</td>
+                    <td>~13.0M</td>
+                    <td><strong>2.28</strong></td>
+                    <td>2.70</td>
+                    <td>2.85</td>
+                    <td>2.87</td>
+                    <td>2.58</td>
+                    <td>2.66</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="section-note">CART losses (lower is better) across completed validation datasets. Best value per column in bold.</p>
+
+            <div class="level-set has-text-justified" style="margin-top: 2rem;">
+              <p>
+                The structured bases beat the direct Hypernet projection on every completed validation domain.
+                Chebyshev takes the best average at nearly the same trainable budget as Hypernet (~8M vs ~7.5M), while
+                the larger DCT adapter stays close on average and posts the best PTB score. The signal is therefore not
+                simply that more parameters help: once conditioning enters the SSM operator, the geometry of the
+                context-to-operator map is what matters. Training uses <strong>CART</strong>
+                (Context-Adaptive Token-level Noise Rescheduling), which reweights the masked-token loss per position
+                according to how much usable local context surrounds each mask.
+              </p>
+              <p>
+                These are internal adapter ablations under a shared frozen backbone, diffusion objective and validation
+                protocol; they are not a head-to-head comparison against separately trained diffusion language models.
+                Adapters, training scripts and evaluation code are in the
+                <a href="https://github.com/ibitec7/mark" target="_blank" rel="noopener">project repository</a>.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End results -->
+
+
+  <!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <div class="bibtex-header">
+        <h2 class="title">BibTeX</h2>
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
+          <i class="fas fa-copy"></i>
+          <span class="copy-text">Copy</span>
+        </button>
+      </div>
+      <pre id="bibtex-code"><code>
+    @inproceedings{ibrahim2026mark,
+      author={Syed Ibrahim Omer, Ginny Y. Wong, Xiangyu Zhao},
+      booktitle={Advances in Neural Information Processing Systems},
+      title={MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models},
+      url={https://neurips.cc},
+      volume={40, Main Conference},
+      year={2026},
+    }</code></pre>
+    </div>
+  </section>
+  <!--End BibTex citation -->
+
+
+  <footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+  </main>
+
+</body>
+</html>
