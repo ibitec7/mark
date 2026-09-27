@@ -84,27 +84,6 @@ function setupVideoCarouselAutoplay() {
     });
 }
 
-// Render every LaTeX expression on the page with KaTeX.
-// Runs before the carousels are built so that any slide copies carry rendered
-// math rather than raw \( ... \) source.
-function renderMath() {
-    if (typeof window.renderMathInElement === 'undefined') {
-        console.warn('KaTeX auto-render unavailable; LaTeX is left as plain text.');
-        return;
-    }
-
-    window.renderMathInElement(document.body, {
-        // Only explicit delimiters, so stray "$" in prose is never treated as math.
-        delimiters: [
-            { left: '\\(', right: '\\)', display: false },
-            { left: '$$', right: '$$', display: true },
-        ],
-        // A typo in an expression degrades to visible red text instead of breaking the page.
-        throwOnError: false,
-        errorColor: '#cc0000',
-    });
-}
-
 // Keep every gallery advancing on its own, forever.
 // The galleries are started at staggered offsets (one period divided across
 // them), so no two galleries ever change slide at the same moment.
@@ -128,8 +107,6 @@ function startAutoAdvance(instances, periodMs) {
 // Initialize the results carousels.
 // bulma-carousel is self-contained (no jQuery needed) and is loaded before this file.
 function initCarousels() {
-    renderMath();
-
     if (typeof window.bulmaCarousel === 'undefined') {
         console.warn('bulma-carousel unavailable; galleries are shown as a static list.');
         return;
@@ -150,10 +127,6 @@ function initCarousels() {
 
     if (galleries && galleries.length) {
         startAutoAdvance(galleries, 15000);
-    }
-
-    if (typeof window.bulmaSlider !== 'undefined') {
-        window.bulmaSlider.attach();
     }
 
     // Setup video autoplay for carousel

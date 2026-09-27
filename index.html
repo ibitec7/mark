@@ -17,7 +17,7 @@
   <meta property="og:site_name" content="City University of Hong Kong">
   <meta property="og:title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
   <meta property="og:description" content="We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.">
-  <meta property="og:url" content="https://ibitec7.github.io/mark-page/">
+  <meta property="og:url" content="https://ibitec7.github.io/mark/">
   <meta property="og:image" content="static/images/social_preview.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -32,7 +32,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
   <meta name="twitter:description" content="We propose an LPV-SSM framework that conditions SSMs via direct recurrent operator modulation by turning the SSM parameters into matrix-valued functions, with provable stability, operator identifiability, and empirical timestep-dependent memory adaptation.">
-  <meta name="twitter:image" content="https://ibitec7.github.io/mark-page/static/images/social_preview.png">
+  <meta name="twitter:image" content="https://ibitec7.github.io/mark/static/images/social_preview.png">
   <meta name="twitter:image:alt" content="MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models">
 
   <!-- Academic/Research Specific -->
@@ -50,12 +50,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <!-- Preconnect for performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
   <title>MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models</title>
-  <link rel="canonical" href="https://ibitec7.github.io/mark-page/">
+  <link rel="canonical" href="https://ibitec7.github.io/mark/">
 
   <!-- Favicon and App Icons -->
   <link rel="icon" href="static/images/favicon.ico" sizes="any">
@@ -63,36 +59,23 @@
   <link rel="icon" type="image/png" sizes="192x192" href="static/images/favicon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="static/images/apple-touch-icon.png">
 
-  <!-- Critical CSS - Load synchronously -->
+  <!-- Stylesheets. Four small files, all served over HTTP/2 in one round trip:
+       the browser never waits on a third-party font or icon CDN. -->
   <link rel="stylesheet" href="static/css/bulma.min.css">
   <link rel="stylesheet" href="static/css/index.css">
-
-  <!-- Non-critical CSS - Load asynchronously -->
-  <link rel="preload" href="static/css/bulma-carousel.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <link rel="preload" href="static/css/bulma-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <link rel="preload" href="static/css/fontawesome.all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <!-- Academicons is self-hosted, so the arXiv icon never depends on a CDN -->
-  <link rel="preload" href="static/vendor/academicons/css/academicons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-
-  <!-- Fallback for browsers that don't support preload -->
-  <noscript>
-    <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
-    <link rel="stylesheet" href="static/css/bulma-slider.min.css">
-    <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
-    <link rel="stylesheet" href="static/vendor/academicons/css/academicons.min.css">
-  </noscript>
-
-  <!-- Fonts - Optimized loading -->
-  <!-- KaTeX (self-hosted: stylesheet, runtime and its webfonts) -->
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
   <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Inter, self-hosted (variable, latin subset, 48 KB). Preloaded because the
+       headline and body text paint with it; without the preload the first paint
+       would flash a fallback face before swapping. -->
+  <style>@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url('static/fonts/inter-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}</style>
+  <link rel="preload" href="static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 
-  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <!-- The teaser is the largest thing on the first screen: start it immediately. -->
+  <link rel="preload" href="static/images/mark/teaser.webp" as="image" type="image/webp" fetchpriority="high">
+
   <script defer src="static/js/bulma-carousel.min.js"></script>
-  <script defer src="static/js/bulma-slider.min.js"></script>
-  <script defer src="static/vendor/katex/katex.min.js"></script>
-  <script defer src="static/vendor/katex/auto-render.min.js"></script>
   <script defer src="static/js/index.js"></script>
 
   <!-- Structured Data for Academic Papers -->
@@ -133,15 +116,15 @@
       "@type": "Organization",
       "name": "arXiv"
     },
-    "url": "https://ibitec7.github.io/mark-page/",
-    "image": "https://ibitec7.github.io/mark-page/static/images/social_preview.png",
+    "url": "https://ibitec7.github.io/mark/",
+    "image": "https://ibitec7.github.io/mark/static/images/social_preview.png",
     "keywords": ["State Space Models", "Dynamic Operator Conditioning", "Linear Parameter-Varying Systems", "Diffusion Language Models", "Markov Parameters"],
     "abstract": "We introduce MaRK (Markov-adapted Recurrent Kernels), a dynamic operator-conditioning framework that maps context vectors directly into bounded modulations of a frozen SSM's recurrence (A), read-in (B), read-out (C), skip (D), and discretization parameters. Viewed through the lens of Linear Parameter-Varying systems, MaRK induces a context-indexed family of Markov parameter sequences, allowing each diffusion timestep to reshape the model's input-output memory kernel.",
     "isAccessibleForFree": true,
     "license": "https://creativecommons.org/licenses/by-sa/4.0/",
     "mainEntity": {
       "@type": "WebPage",
-      "@id": "https://ibitec7.github.io/mark-page/"
+      "@id": "https://ibitec7.github.io/mark/"
     },
     "about": [
       {
@@ -161,7 +144,7 @@
 
   <!-- Scroll to Top Button -->
   <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
-    <i class="fas fa-chevron-up"></i>
+    <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" focusable="false"><path d="M240.971 130.524l194.343 194.343c9.373 9.373 9.373 24.569 0 33.941l-22.667 22.667c-9.357 9.357-24.522 9.375-33.901.04L224 227.495 69.255 381.516c-9.379 9.335-24.544 9.317-33.901-.04l-22.667-22.667c-9.373-9.373-9.373-24.569 0-33.941L207.03 130.525c9.372-9.373 24.568-9.373 33.941-.001z"/></svg>
   </button>
 
   <main id="main-content">
@@ -194,7 +177,7 @@
                   <a href="https://openreview.net/pdf?id=yIjFWwvG7b" target="_blank" rel="noopener"
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
-                      <i class="fas fa-file-pdf"></i>
+                      <svg viewBox="0 0 384 512" fill="currentColor" aria-hidden="true" focusable="false"><path d="M181.9 256.1c-5-16-4.9-46.9-2-46.9 8.4 0 7.6 36.9 2 46.9zm-1.7 47.2c-7.7 20.2-17.3 43.3-28.4 62.7 18.3-7 39-17.2 62.9-21.9-12.7-9.6-24.9-23.4-34.5-40.8zM86.1 428.1c0 .8 13.2-5.4 34.9-40.2-6.7 6.3-29.1 24.5-34.9 40.2zM248 160h136v328c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V24C0 10.7 10.7 0 24 0h200v136c0 13.2 10.8 24 24 24zm-8 171.8c-20-12.2-33.3-29-42.7-53.8 4.5-18.5 11.6-46.6 6.2-64.2-4.7-29.4-42.4-26.5-47.8-6.8-5 18.3-.4 44.1 8.1 77-11.6 27.6-28.7 64.6-40.8 85.8-.1 0-.1.1-.2.1-27.1 13.9-73.6 44.5-54.5 68 5.6 6.9 16 10 21.5 10 17.9 0 35.7-18 61.1-61.8 25.8-8.5 54.1-19.1 79-23.2 21.7 11.8 47.1 19.5 64 19.5 29.2 0 31.2-32 19.7-43.4-13.9-13.6-54.3-9.7-73.6-7.2zM377 105L279 7c-4.5-4.5-10.6-7-17-7h-6v128h128v-6.1c0-6.3-2.5-12.4-7-16.9zm-74.1 255.3c4.1-2.7-2.5-11.9-42.8-9 37.1 15.8 42.8 9 42.8 9z"/></svg>
                     </span>
                     <span>Paper (Coming Soon)</span>
                   </a>
@@ -205,7 +188,7 @@
                   <a href="https://github.com/ibitec7/mark" target="_blank" rel="noopener"
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
-                      <i class="fab fa-github"></i>
+                      <svg viewBox="0 0 496 512" fill="currentColor" aria-hidden="true" focusable="false"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
                     </span>
                     <span>Code</span>
                   </a>
@@ -216,7 +199,7 @@
                   <a href="https://openreview.net/pdf?id=yIjFWwvG7b" target="_blank" rel="noopener"
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
-                      <i class="ai ai-arxiv"></i>
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M3.8423 0a1.0037 1.0037 0 0 0-.922.6078c-.1536.3687-.0438.6275.2938 1.1113l6.9185 8.3597-1.0223 1.1058a1.0393 1.0393 0 0 0 .003 1.4229l1.2292 1.3135-5.4391 6.4444c-.2803.299-.4538.823-.2971 1.1986a1.0253 1.0253 0 0 0 .9585.635.9133.9133 0 0 0 .6891-.3405l5.783-6.126 7.4902 8.0051a.8527.8527 0 0 0 .6835.2597.9575.9575 0 0 0 .8777-.6138c.1577-.377-.017-.7502-.306-1.1407l-7.0518-8.3418 1.0632-1.13a.9626.9626 0 0 0 .0089-1.3165L4.6336.4639s-.3733-.4535-.768-.463zm0 .272h.0166c.2179.0052.4874.2715.5644.3639l.005.006.0052.0055 10.169 10.9905a.6915.6915 0 0 1-.0072.945l-1.0666 1.133-1.4982-1.7724-8.5994-10.39c-.3286-.472-.352-.6183-.2592-.841a.7307.7307 0 0 1 .6704-.4401Zm14.341 1.5701a.877.877 0 0 0-.6554.2418l-5.6962 6.1584 1.6944 1.8319 5.3089-6.5138c.3251-.4335.479-.6603.3247-1.0292a1.1205 1.1205 0 0 0-.9763-.689zm-7.6557 12.2823 1.3186 1.4135-5.7864 6.1295a.6494.6494 0 0 1-.4959.26.7516.7516 0 0 1-.706-.4669c-.1119-.2682.0359-.6864.2442-.9083l.0051-.0055.0047-.0055z"/></svg>
                     </span>
                     <span>arXiv (Coming Soon)</span>
                   </a>
@@ -225,7 +208,10 @@
 
               <!-- Paper teaser image: below the link buttons, above the TLDR -->
               <figure class="teaser-figure">
-                <img src="static/images/mark/teaser.png" alt="Overview of MaRK: a context vector (the diffusion timestep) is mapped to bounded, low-rank modulations of a frozen SSM's recurrence, read-in, read-out, skip and discretization parameters.">
+                <picture>
+                <source srcset="static/images/mark/teaser.webp" type="image/webp">
+                <img src="static/images/mark/teaser.png" width="1695" height="468" alt="Overview of MaRK: a context vector (the diffusion timestep) is mapped to bounded, low-rank modulations of a frozen SSM's recurrence, read-in, read-out, skip and discretization parameters." fetchpriority="high" decoding="async">
+              </picture>
               </figure>
 
               <!-- TLDR: concise one-paragraph summary, placed directly below the teaser image -->
@@ -304,25 +290,25 @@
       <div class="container">
         <div id="theory-carousel" class="carousel results-carousel">
           <div class="item">
-            <img src="static/images/mark/identifiability.png" alt="Markov operator error versus number of synthetic trajectories for the Hypernet, Chebyshev and DCT kernels, shown side by side on log-log axes" loading="lazy">
+            <img src="static/images/mark/identifiability.png" width="2296" height="593" alt="Markov operator error versus number of synthetic trajectories for the Hypernet, Chebyshev and DCT kernels, shown side by side on log-log axes" loading="lazy" decoding="async">
             <h2 class="subtitle has-text-centered">
               <em><b>Operator identifiability: Hypernet | Chebyshev | DCT.</b></em> Markov Operator Error
-              \(\mathrm{MOE} = \lVert \mathcal{H}_{\text{true}} - \hat{\mathcal{H}}_{\text{est}} \rVert_F\)
+              <span class="katex-math" data-tex="\mathrm{MOE} = \lVert \mathcal{H}_{\text{true}} - \hat{\mathcal{H}}_{\text{est}} \rVert_F"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">E</mi></mrow><mo>=</mo><mo stretchy="false">∥</mo><msub><mi mathvariant="script">H</mi><mtext>true</mtext></msub><mo>−</mo><msub><mover accent="true"><mi mathvariant="script">H</mi><mo>^</mo></mover><mtext>est</mtext></msub><msub><mo stretchy="false">∥</mo><mi>F</mi></msub></mrow><annotation encoding="application/x-tex">\mathrm{MOE} = \lVert \mathcal{H}_{\text{true}} - \hat{\mathcal{H}}_{\text{est}} \rVert_F</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord"><span class="mord mathrm">MOE</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">∥</span><span class="mord"><span class="mord mathcal" style="margin-right:0.00965em;">H</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0097em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">true</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1968em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9468em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathcal" style="margin-right:0.00965em;">H</span></span><span style="top:-3.2523em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1944em;"><span class="mord">^</span></span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0097em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">est</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">F</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span>
               (coordinate-invariant, the difference between the true and estimated Markov parameter sequences) against
-              the number of synthetic trajectories, \(N \in [50, 1600]\). All three kernels decay along the
-              \(O(N^{-1/2})\) reference (red dashed); the fitted rates are \(N^{-0.54}\) for Hypernet,
-              \(N^{-0.66}\) for Chebyshev and \(N^{-0.64}\) for DCT. Chebyshev reaches the lowest
+              the number of synthetic trajectories, <span class="katex-math" data-tex="N \in [50, 1600]"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>∈</mo><mo stretchy="false">[</mo><mn>50</mn><mo separator="true">,</mo><mn>1600</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">N \in [50, 1600]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7224em;vertical-align:-0.0391em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">50</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1600</span><span class="mclose">]</span></span></span></span></span>. All three kernels decay along the
+              <span class="katex-math" data-tex="O(N^{-1/2})"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><msup><mi>N</mi><mrow><mo>−</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(N^{-1/2})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.138em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.888em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1/2</span></span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span> reference (red dashed); the fitted rates are <span class="katex-math" data-tex="N^{-0.54}"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>N</mi><mrow><mo>−</mo><mn>0.54</mn></mrow></msup></mrow><annotation encoding="application/x-tex">N^{-0.54}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">0.54</span></span></span></span></span></span></span></span></span></span></span></span></span> for Hypernet,
+              <span class="katex-math" data-tex="N^{-0.66}"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>N</mi><mrow><mo>−</mo><mn>0.66</mn></mrow></msup></mrow><annotation encoding="application/x-tex">N^{-0.66}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">0.66</span></span></span></span></span></span></span></span></span></span></span></span></span> for Chebyshev and <span class="katex-math" data-tex="N^{-0.64}"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>N</mi><mrow><mo>−</mo><mn>0.64</mn></mrow></msup></mrow><annotation encoding="application/x-tex">N^{-0.64}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">0.64</span></span></span></span></span></span></span></span></span></span></span></span></span> for DCT. Chebyshev reaches the lowest
               structured-basis error, and DCT's larger constant is consistent with its extra bandlimited restriction
               rather than a loss of recoverability.
             </h2>
           </div>
           <div class="item">
-            <img src="static/images/mark/aqs_certificate.png" alt="Per-layer stability margins of the 23-layer pre-trained Hydra SSM at the extreme bounds of MaRK modulation" loading="lazy">
+            <img src="static/images/mark/aqs_certificate.png" width="2400" height="1020" alt="Per-layer stability margins of the 23-layer pre-trained Hydra SSM at the extreme bounds of MaRK modulation" loading="lazy" decoding="async">
             <h2 class="subtitle has-text-centered">
               <em><b>Stability certificate.</b></em> Per-layer stability margin
-              \(\varepsilon_\ell\) of the pre-trained 23-layer Hydra SSM evaluated at the extreme bounds of MaRK
-              modulation. All 23 layers certify with \(\varepsilon_\ell > 0\) using the constructive
-              \(P = I\) Lyapunov function, so the modulated recurrence stays stable for every admissible conditioning
+              <span class="katex-math" data-tex="\varepsilon_\ell"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi mathvariant="normal">ℓ</mi></msub></mrow><annotation encoding="application/x-tex">\varepsilon_\ell</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">ℓ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span> of the pre-trained 23-layer Hydra SSM evaluated at the extreme bounds of MaRK
+              modulation. All 23 layers certify with <span class="katex-math" data-tex="\varepsilon_\ell &gt; 0"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi mathvariant="normal">ℓ</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\varepsilon_\ell &gt; 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6891em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">ℓ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> using the constructive
+              <span class="katex-math" data-tex="P = I"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo>=</mo><mi>I</mi></mrow><annotation encoding="application/x-tex">P = I</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span></span> Lyapunov function, so the modulated recurrence stays stable for every admissible conditioning
               context.
             </h2>
           </div>
@@ -342,9 +328,9 @@
               <p>
                 If MaRK really conditions the operator, then each frozen diffusion timestep should come with its
                 own memory kernel
-                \(\mathcal{H}(t) = \{C(t)A^k(t)B(t)\}_{k \geq 0}\).
-                We measure the head-averaged Markov norm \(\|h_k(t)\|_2\) over lags
-                \(k \le 4096\) and compare it with the unmodulated backbone. The curves separate, and because the
+                <span class="katex-math" data-tex="\mathcal{H}(t) = \{C(t)A^k(t)B(t)\}_{k \geq 0}"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="script">H</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mo stretchy="false">{</mo><mi>C</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msup><mi>A</mi><mi>k</mi></msup><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mi>B</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mo stretchy="false">}</mo><mrow><mi>k</mi><mo>≥</mo><mn>0</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\mathcal{H}(t) = \{C(t)A^k(t)B(t)\}_{k \geq 0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathcal" style="margin-right:0.00965em;">H</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mord"><span class="mord mathnormal">A</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mclose"><span class="mclose">}</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mrel mtight">≥</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2452em;"><span></span></span></span></span></span></span></span></span></span></span>.
+                We measure the head-averaged Markov norm <span class="katex-math" data-tex="\|h_k(t)\|_2"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∥</mi><msub><mi>h</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi mathvariant="normal">∥</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">\|h_k(t)\|_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∥</span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span> over lags
+                <span class="katex-math" data-tex="k \le 4096"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>≤</mo><mn>4096</mn></mrow><annotation encoding="application/x-tex">k \le 4096</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8304em;vertical-align:-0.136em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4096</span></span></span></span></span> and compare it with the unmodulated backbone. The curves separate, and because the
                 Markov sequence fixes the transfer function up to a change of state coordinates, that separation is a
                 change of input&ndash;output operator, not merely a timestep-dependent activation gain.
               </p>
@@ -361,17 +347,20 @@
       <div class="container">
         <div id="dynamics-carousel" class="carousel results-carousel">
           <div class="item">
-            <img src="static/images/mark/markov_norm_vs_lag.png" alt="Mean Markov parameter norm versus lag for the Hypernet, Chebyshev and DCT adapters at five diffusion timesteps, compared with the frozen backbone" loading="lazy">
+            <img src="static/images/mark/markov_norm_vs_lag.png" width="2400" height="792" alt="Mean Markov parameter norm versus lag for the Hypernet, Chebyshev and DCT adapters at five diffusion timesteps, compared with the frozen backbone" loading="lazy" decoding="async">
             <h2 class="subtitle has-text-centered">
               <em><b>Timestep-conditioned Markov operators.</b></em> Head-resolved mean Markov parameter norm against
               lag, over lags up to 4096, for the Hypernet, Chebyshev and DCT adapters at
-              \(t \in \{0, 0.25, 0.5, 0.75, 1.0\}\). The dashed curve is the frozen Hydra backbone. Chebyshev forms an
+              <span class="katex-math" data-tex="t \in \{0, 0.25, 0.5, 0.75, 1.0\}"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>∈</mo><mo stretchy="false">{</mo><mn>0</mn><mo separator="true">,</mo><mn>0.25</mn><mo separator="true">,</mo><mn>0.5</mn><mo separator="true">,</mo><mn>0.75</mn><mo separator="true">,</mo><mn>1.0</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">t \in \{0, 0.25, 0.5, 0.75, 1.0\}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6542em;vertical-align:-0.0391em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0.25</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0.5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0.75</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1.0</span><span class="mclose">}</span></span></span></span></span>. The dashed curve is the frozen Hydra backbone. Chebyshev forms an
               ordered family of smooth decay profiles; DCT redistributes energy and crosses the backbone at
               intermediate lags; Hypernet gives the broadest upward shift at medium and long lags.
             </h2>
           </div>
           <div class="item">
-            <img src="static/images/mark/markov_headseq_heatmap.png" alt="Heatmap of the Markov parameter norm per SSM head over lag and diffusion timestep" loading="lazy">
+            <picture>
+                <source srcset="static/images/mark/markov_headseq_heatmap.webp" type="image/webp">
+                <img src="static/images/mark/markov_headseq_heatmap.png" width="2400" height="670" alt="Heatmap of the Markov parameter norm per SSM head over lag and diffusion timestep" loading="lazy" decoding="async">
+              </picture>
             <h2 class="subtitle has-text-centered">
               <em><b>Head-resolved memory profile.</b></em> Markov parameter norm per SSM head as a function of lag and
               diffusion timestep. Each row of the map is one head's temporal memory, so the figure exposes how the
@@ -489,7 +478,7 @@
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
         <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
-          <i class="fas fa-copy"></i>
+          <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" focusable="false"><path d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"/></svg>
           <span class="copy-text">Copy</span>
         </button>
       </div>

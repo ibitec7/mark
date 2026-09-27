@@ -2,7 +2,7 @@
 
 Project website for **MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models**.
 
-**Live site: <https://ibitec7.github.io/mark-page/>**
+**Live site: <https://ibitec7.github.io/mark/>**
 
 ## Links
 
@@ -19,13 +19,28 @@ MaRK induces a context-indexed family of Markov parameter sequences, allowing ea
 reshape the model's input-output memory kernel. The adapters are provably stable, the operator is
 identifiable, and the framework is evaluated on diffusion language models.
 
-## Pages
+## Repository layout
 
 - `index.html` — the entire site (content lives here)
 - `static/css/index.css` — styling
-- `static/js/index.js` — galleries, LaTeX rendering, copy-to-clipboard
+- `static/fonts/inter-latin.woff2` — self-hosted Inter (variable, latin subset)
 - `static/images/` — figures, favicons, social preview
-- `static/vendor/katex/` — self-hosted KaTeX (equations render with no external dependency)
+- `static/js/index.js` — galleries and copy-to-clipboard
+- `static/vendor/katex/` — self-hosted KaTeX
+- `tools/render-math.mjs` — pre-renders the LaTeX in `index.html`
+
+## Equations
+
+The maths is rendered **at build time**, not in the visitor's browser: `tools/render-math.mjs` turns each
+expression into static KaTeX markup and stores the original LaTeX in a `data-tex` attribute. The page
+therefore ships no LaTeX runtime, and the equations paint with the rest of the document.
+
+After editing any equation (either in its `data-tex` attribute or by writing new `\\( ... \\)` in the body),
+regenerate the markup and commit the result:
+
+```bash
+node tools/render-math.mjs
+```
 
 ## Running locally
 
@@ -37,10 +52,26 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
+## Performance
+
+The site is deliberately self-contained and small:
+
+- **No third-party requests.** Fonts (Inter), icons (inline SVG) and KaTeX are all served locally, so
+  there is no DNS/TLS round trip to a font or icon CDN before the first paint.
+- **~650 KB for a first visit** (gzip + WebP), down from ~2.4 MB, with the largest figures re-encoded as
+  256-colour PNGs for line art and WebP for shaded plots.
+- **Explicit `width`/`height` on every figure** so the layout cannot shift while images arrive, plus
+  `loading="lazy"` for everything below the fold and `fetchpriority="high"` on the teaser.
+- **No icon webfont.** Five icons are inlined as SVG.
+
 ## Deployment
 
-Published with [GitHub Pages](https://pages.github.com/) from the `main` branch (repository root).
-Any commit pushed to `main` is redeployed automatically; no build step is required.
+Published with [GitHub Pages](https://pages.github.com/) from the `gh-pages` branch of
+<https://github.com/ibitec7/mark> (repository root), which serves the site at
+<https://ibitec7.github.io/mark/>. Any commit pushed to that branch is redeployed automatically; no build
+step is required.
+
+The previous address, <https://ibitec7.github.io/mark-page/>, redirects here.
 
 ## Acknowledgments
 

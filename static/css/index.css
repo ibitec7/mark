@@ -38,7 +38,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 /* Modern Button Styles */
 .button {
   border-radius: var(--border-radius) !important;
@@ -82,11 +81,6 @@ body {
     margin: 8px 4px;
 }
 
-.dnerf {
-  font-variant: small-caps;
-}
-
-
 /* Hero Section Modernization */
 .hero {
   position: relative;
@@ -119,7 +113,6 @@ section.hero + section.section {
   font-family: 'Inter', sans-serif;
 }
 
-
 /* Publication Content Styling */
 .publication-title {
     font-family: 'Inter', sans-serif !important;
@@ -133,25 +126,6 @@ section.hero + section.section {
     font-size: 2.2rem !important;
 }
 
-.publication-banner {
-  max-height: 70vh;
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-xl);
-  margin: 2rem 0;
-}
-
-.publication-banner video {
-  position: relative;
-  left: auto;
-  top: auto;
-  transform: none;
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-  border-radius: var(--border-radius-lg);
-}
-
 .publication-header .hero-body {
   padding: 6rem 1.5rem 4rem;
 }
@@ -160,28 +134,6 @@ section.hero + section.section {
     font-family: 'Inter', sans-serif !important;
     font-weight: 500;
     margin-bottom: 1.5rem;
-}
-
-.publication-venue {
-    color: var(--text-secondary);
-    width: fit-content;
-    font-weight: 600;
-    background: var(--background-accent);
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    margin-top: 1rem;
-    display: inline-block;
-}
-
-.publication-awards {
-    color: #ef4444;
-    width: fit-content;
-    font-weight: 700;
-    background: linear-gradient(135deg, #fef2f2, #fee2e2);
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    border-left: 4px solid #ef4444;
-    margin-top: 1rem;
 }
 
 .publication-authors a {
@@ -216,53 +168,7 @@ section.hero + section.section {
   margin-right: 0.5rem;
 }
 
-.publication-banner img {
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  transition: var(--transition);
-}
-
-.publication-banner img:hover {
-  transform: scale(1.02);
-  box-shadow: var(--shadow-xl);
-}
-
 /* Modern Video and Carousel Styling */
-.publication-video {
-    position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 56.25%;
-    overflow: hidden;
-    border-radius: var(--border-radius-lg) !important;
-    box-shadow: var(--shadow-xl);
-    transition: var(--transition);
-}
-
-.publication-video:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-}
-
-.publication-video iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--border-radius-lg);
-}
-
-.publication-body img {
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
-}
-
-.publication-body img:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
 
 .results-carousel {
   overflow: hidden;
@@ -319,12 +225,6 @@ section.hero + section.section {
 .results-carousel .slider-pagination .slider-page:hover {
   background: var(--text-primary);
   transform: scale(1.2);
-}
-
-.eql-cntrb { 
-  font-size: 0.875rem;
-  color: var(--text-light);
-  font-style: italic;
 }
 
 /* Section Titles */
@@ -470,151 +370,18 @@ code {
   visibility: visible;
 }
 
-
-/* More Works Dropdown */
-.more-works-container {
-  position: fixed;
-  top: 2rem;
-  right: 2rem;
-  z-index: 1000;
+/* Icons are inline SVG: the Font Awesome webfont (437 KB) is no longer
+   downloaded. Each glyph is sized the way it was inside Bulma's .icon box,
+   and inherits its colour from the surrounding text. */
+.icon svg,
+.copy-bibtex-btn svg,
+.scroll-to-top svg {
+  display: inline-block;
+  height: 1em;
+  width: auto;
+  fill: currentColor;
+  vertical-align: -0.125em;
 }
-
-.more-works-btn {
-  background: var(--background-primary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: 'Inter', sans-serif;
-}
-
-.more-works-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  background: var(--background-secondary);
-  border-color: var(--primary-color);
-}
-
-.more-works-btn .dropdown-arrow {
-  transition: var(--transition);
-  font-size: 0.8rem;
-}
-
-.more-works-btn.active .dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.more-works-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  width: 400px;
-  max-width: 90vw;
-  background: var(--background-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-xl);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: var(--transition);
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.more-works-dropdown.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.dropdown-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dropdown-header h4 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: var(--transition);
-}
-
-.close-btn:hover {
-  background: var(--background-accent);
-  color: var(--text-primary);
-}
-
-.works-list {
-  padding: 1rem;
-}
-
-.work-item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 1rem;
-  border-radius: var(--border-radius);
-  text-decoration: none;
-  color: inherit;
-  transition: var(--transition);
-  margin-bottom: 0.5rem;
-}
-
-.work-item:hover {
-  background: var(--background-accent);
-  transform: translateX(4px);
-}
-
-.work-info h5 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.work-info p {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-.work-venue {
-  font-size: 0.8rem;
-  color: var(--text-light);
-  font-style: italic;
-}
-
-.work-item .fas {
-  color: var(--text-light);
-  font-size: 0.9rem;
-  margin-top: 0.2rem;
-  flex-shrink: 0;
-}
-
 
 /* Mobile Responsive Improvements */
 @media screen and (max-width: 768px) {
@@ -642,23 +409,8 @@ code {
     padding: 0.75rem 1rem !important;
   }
   
-  .more-works-container {
-    bottom: 2rem;
-    right: 1rem;
-    top: auto;
-  }
   
-  .more-works-btn {
-    padding: 0.6rem 1rem;
-    font-size: 0.8rem;
-  }
   
-  .more-works-dropdown {
-    width: calc(100vw - 2rem);
-    right: -1rem;
-    bottom: calc(100% + 0.5rem);
-    top: auto;
-  }
   
   .results-carousel .item {
     padding: 0.75rem 1rem;
@@ -682,25 +434,8 @@ code {
     padding: 1.5rem 0.75rem;
   }
   
-  .more-works-container {
-    position: fixed;
-    bottom: 2rem;
-    right: 1rem;
-    z-index: 1000;
-  }
   
-  .more-works-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-  }
   
-  .more-works-dropdown {
-    position: absolute;
-    bottom: calc(100% + 0.5rem);
-    right: 0;
-    width: calc(100vw - 2rem);
-    max-width: 90vw;
-  }
   
   .link-block {
     display: block;
@@ -748,239 +483,32 @@ a:focus {
   outline-offset: 2px;
 }
 
-
-/* Interactive Atlas Grid Styles */
-/* Control the width of the repository inefficiency section here */
-.inefficiency-section-container {
-  max-width: 1400px; /* <-- ADJUST THIS VALUE to control width */
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-/* Control the width of the video section here */
-.video-section-container {
-  max-width: 1200px; /* <-- ADJUST THIS VALUE to control width */
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-/* Control the width of the discovery/method section here */
-.discovery-section-container {
-  max-width: 1400px; /* <-- ADJUST THIS VALUE to control width */
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-/* Control the width of the entire atlas section here */
-.atlas-section-container {
-  max-width: 1400px; /* <-- ADJUST THIS VALUE to control width */
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-.atlas-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  margin-top: 2rem;
-  width: 100%;
-}
-
-.atlas-panel {
-  background: var(--background-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.atlas-panel:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.atlas-panel-header {
-  padding: 1.25rem 1.5rem;
-  background: var(--background-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.atlas-panel-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-}
-
-.atlas-panel-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 700px;
-}
-
-.atlas-pdf-container {
-  flex: 1;
-  position: relative;
-  min-height: 600px;
-  background: var(--background-accent);
-  border-bottom: 1px solid var(--border-color);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.atlas-pdf {
-  width: 100%;
-  height: 100%;
-  min-height: 600px;
-  border: none;
-  display: block;
-  transition: opacity 0.3s ease;
-}
-
-.atlas-caption {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  color: var(--text-secondary);
-  font-size: 1.3rem;
-  line-height: 1.6;
-  font-style: italic;
-}
-
-.atlas-controls {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  padding: 1rem;
-  background: var(--background-secondary);
-}
-
-.atlas-btn {
-  background: var(--background-primary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: 1rem 1.5rem;
-  font-weight: 600;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: var(--transition);
-  font-family: 'Inter', sans-serif;
-  text-align: center;
-}
-
-.atlas-btn:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateX(4px);
-  box-shadow: var(--shadow-md);
-}
-
-.atlas-btn.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-md);
-}
-
 /* Responsive adjustments for atlas grid */
 @media screen and (max-width: 1024px) {
-  .atlas-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
   
-  .atlas-panel-content {
-    min-height: 700px;
-  }
   
-  .atlas-pdf-container {
-    min-height: 600px;
-  }
   
-  .atlas-pdf {
-    min-height: 600px;
-  }
 }
 
 @media screen and (max-width: 768px) {
-  .atlas-grid {
-    gap: 1rem;
-  }
   
-  .atlas-panel-header {
-    padding: 1rem;
-  }
   
-  .atlas-panel-title {
-    font-size: 1.1rem;
-  }
   
-  .atlas-controls {
-    padding: 0.75rem;
-    grid-template-columns: repeat(2, 1fr);
-  }
   
-  .atlas-btn {
-    padding: 0.6rem 0.75rem;
-    font-size: 0.85rem;
-  }
   
-  .atlas-panel-content {
-    min-height: 600px;
-  }
   
-  .atlas-pdf-container {
-    min-height: 500px;
-  }
   
-  .atlas-pdf {
-    min-height: 500px;
-  }
 }
 
 @media screen and (max-width: 480px) {
-  .atlas-controls {
-    grid-template-columns: 1fr;
-  }
   
-  .atlas-btn {
-    width: 100%;
-  }
   
-  .atlas-panel-content {
-    min-height: 500px;
-  }
   
-  .atlas-pdf-container {
-    min-height: 400px;
-  }
   
-  .atlas-pdf {
-    min-height: 400px;
-  }
 }
 
 /* Print styles */
 @media print {
-  .more-works-container {
-    display: none;
-  }
   
   .hero, .section {
     animation: none;
@@ -992,11 +520,7 @@ a:focus {
     box-shadow: none !important;
   }
   
-  .atlas-controls {
-    display: none;
-  }
 }
-
 
 /* ------------------------------------------------------------------
    MaRK project page
@@ -1127,6 +651,4 @@ a:focus {
     margin-top: 1.25rem;
   }
 }
-
-
 
