@@ -53,7 +53,6 @@
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
   <title>MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models</title>
   <link rel="canonical" href="https://ibitec7.github.io/mark-page/">
@@ -72,14 +71,15 @@
   <link rel="preload" href="static/css/bulma-carousel.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="static/css/bulma-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="static/css/fontawesome.all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <link rel="preload" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <!-- Academicons is self-hosted, so the arXiv icon never depends on a CDN -->
+  <link rel="preload" href="static/vendor/academicons/css/academicons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 
   <!-- Fallback for browsers that don't support preload -->
   <noscript>
     <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
     <link rel="stylesheet" href="static/css/bulma-slider.min.css">
     <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <link rel="stylesheet" href="static/vendor/academicons/css/academicons.min.css">
   </noscript>
 
   <!-- Fonts - Optimized loading -->
