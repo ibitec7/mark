@@ -129,6 +129,58 @@ If you need a subset of kernels (for example a single row of the table), import 
 
 ---
 
+## Ablation suites — `src/ablation.py`
+
+`src/ablation.py` is the single driver for the three ablations in the
+rebuttal/revision package. `--suite` selects one suite, or `--suite all` runs
+them in sequence.
+
+```bash
+# 1. Leave-one-out SSM parameter ablation on WikiText
+uv run python -m src.ablation --suite loo --seeds 10
+
+# 2. CART-weighted validation benchmarks over every dataset in data/benchmarks
+uv run python -m src.ablation --suite cart --seeds 10 --limit-val-batches 500
+
+# 3. AdaLN-Zero vs Input-Injection vs MaRK kernel profiling
+#    (delegates to the companion `experiment` checkout)
+uv run python -m src.ablation --suite profiling --profiling-seeds 15
+
+# Everything
+uv run python -m src.ablation --suite all --seeds 10
+```
+
+### Protocol shared by the `loo` and `cart` suites
+
+- Replicates are `--seeds N` independent seeds `42, 142, 242, …` (`42 + i × 100`).
+- Aggregation uses the sample standard deviation (`ddof=1`) and a 95% confidence
+  interval `mean ± 1.96 × SEM` — the same estimator used for the WikiText
+  leave-one-out ablation.
+- `cart` validates with the training-matching evaluator (NeMo
+  `Trainer.validate`, diffusion masking, CART weights from `cart: true`).
+- `--limit-val-batches N` caps each dataset at N validation batches (**an
+  absolute batch count**). This is required for `arxiv` (78,463 packed
+  sequences) and `pubmed` (143,414) which, at the released `batch_size: 1` and
+  `pad_length: 4096`, would each need hours per evaluation. Datasets with fewer
+  than N batches are still evaluated in full.
+
+### Outputs
+
+| Suite | Artifacts |
+|-------|-----------|
+| `loo` | `data/ablation_results/ablation_results.csv`, `ablation_summary.md`, `<kernel>_<mode>_seed<seed>.json` |
+| `cart` | `data/ablation_results/cart_raw.csv` (per-seed raw metrics), `cart_benchmark_results.csv` (mean/std/95% CI), `cart_benchmark_summary.md`, `cart_<kernel>_<dataset>_<mode>_seed<seed>.json` |
+| `profiling` | `data/ablation_results/profiling_summary.md`, `data/ablation_results/profiling/<tag>/…` |
+
+### Base weights
+
+The benchmark configs reference the derived base checkpoint
+`models/hydra_bert_23layers_mark_base.pt`. If only the released
+`models/hydra_bert_23layers.pt` is present, `src/ablation.py` generates the
+derived file automatically with `src.transfer` before the first evaluation.
+
+---
+
 ## Figures and diagnostics — `analysis/`
 
 Run from the repo root.
