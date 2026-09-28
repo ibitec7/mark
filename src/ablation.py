@@ -617,6 +617,76 @@ def run_cart_benchmark_suite(
     }
 
 
+def _cart_rows_from_csv(csv_path: str) -> list[dict]:
+    """Read a ``cart_raw.csv`` back into per-seed metric rows."""
+    import csv
+
+    rows: list[dict] = []
+    with open(csv_path, newline="") as f:
+        for record in csv.DictReader(f):
+            row: dict = {
+                "kernel": record["kernel"],
+                "mode": record["mode"],
+                "dataset": record["dataset"],
+                "seed": record.get("seed", ""),
+            }
+            for key in METRIC_KEYS:
+                value = record.get(key, "")
+                row[key] = float(value) if value not in ("", None) else None
+            error = record.get("error", "")
+            if error:
+                row["error"] = error
+            rows.append(row)
+    return rows
+
+
+def rebuild_cart_result_from_raw(
+    raw_rows: list[dict],
+    limit_val_batches: int | None = None,
+) -> dict:
+    """Re-aggregate a CART run from its raw per-seed rows (no GPU work).
+
+    Lets ``cart_benchmark_results.csv`` and ``cart_benchmark_summary.md`` be
+    regenerated from an existing ``cart_raw.csv`` without re-running the sweep.
+    """
+    if not raw_rows:
+        raise ValueError("No raw CART rows to aggregate")
+
+    datasets = sorted({row["dataset"] for row in raw_rows})
+    modes = list(dict.fromkeys(row["mode"] for row in raw_rows))
+    kernels = list(dict.fromkeys(row["kernel"] for row in raw_rows))
+
+    aggregated: dict[str, dict[str, dict[str, dict]]] = {}
+    for kernel in kernels:
+        aggregated[kernel] = {}
+        for mode in modes:
+            aggregated[kernel][mode] = {}
+            for ds_name in datasets:
+                seed_metrics: list[dict] = []
+                for row in raw_rows:
+                    if (
+                        row["kernel"] != kernel
+                        or row["mode"] != mode
+                        or row["dataset"] != ds_name
+                    ):
+                        continue
+                    metrics = {
+                        key: row.get(key) for key in METRIC_KEYS if row.get(key) is not None
+                    }
+                    if row.get("error"):
+                        metrics["error"] = row["error"]
+                    seed_metrics.append(metrics)
+                aggregated[kernel][mode][ds_name] = _compute_statistics(seed_metrics)
+
+    return {
+        "aggregated": aggregated,
+        "raw": raw_rows,
+        "datasets": datasets,
+        "modes": modes,
+        "limit_val_batches": limit_val_batches,
+    }
+
+
 def save_cart_results(
     result: dict,
     seeds: int = 1,
@@ -712,6 +782,10 @@ def save_cart_results(
         f.write(f"> Datasets ({len(datasets)}): {', '.join(datasets)}\n")
         f.write(f"> Modes: {', '.join(modes)}\n")
         f.write("> Evaluator: NeMo `Trainer.validate` with diffusion masking and CART weights\n")
+        f.write(
+            "> **Primary metric:** `weighted_nll` = the **CART loss**. "
+            "`weighted_ppl = exp(weighted_nll)` is the same number exponentiated.\n"
+        )
         if cap is not None:
             f.write(
                 f"> **Validation cap:** first {int(cap)} validation batches per dataset "
@@ -721,51 +795,55 @@ def save_cart_results(
             f.write("> **Validation cap:** none — every dataset is evaluated in full\n")
         f.write("\n")
 
-        f.write("## Results: CART-weighted (and raw) perplexity per dataset\n\n")
+        f.write("## Results: CART loss (weighted NLL) per dataset\n\n")
+        f.write(
+            "`weighted_nll` is the CART loss — the reportable number. "
+            "`weighted_ppl = exp(weighted_nll)` is shown only as a convenience.\n\n"
+        )
         header = "| Kernel | Dataset |"
         if multi_mode:
             header += " Mode |"
-        header += " n | Weighted PPL ↓ | Raw PPL ↓ | Weighted NLL ↓ |\n"
+        header += " n | CART loss (W-NLL) ↓ | W-PPL (=e^NLL) | Raw PPL ↓ |\n"
         f.write(header)
         sep = "|--------|---------|"
         if multi_mode:
             sep += "------|"
-        sep += "---|---|---------------|-----------|----------------|\n"
+        sep += "---|---|--------------------|---------------|-----------|\n"
         f.write(sep)
 
         for kernel in sorted(aggregated.keys()):
             for mode in modes:
                 for ds_name in datasets:
                     n = aggregated[kernel][mode][ds_name].get("n_valid", 0)
+                    wnl = _fmt(_agg(ds_name, mode, kernel, "weighted_nll"))
+                    nhalf = _half_ci(ds_name, mode, kernel, "weighted_nll")
                     wppl = _fmt(_agg(ds_name, mode, kernel, "weighted_ppl"))
                     half = _half_ci(ds_name, mode, kernel, "weighted_ppl")
                     rppl = _fmt(_agg(ds_name, mode, kernel, "raw_ppl"))
                     rhalf = _half_ci(ds_name, mode, kernel, "raw_ppl")
-                    wnl = _fmt(_agg(ds_name, mode, kernel, "weighted_nll"))
-                    nhalf = _half_ci(ds_name, mode, kernel, "weighted_nll")
                     if multi_seed:
+                        wnl_s = f"{wnl} ± {_fmt(nhalf, '.3f')}" if nhalf else wnl
                         wppl_s = f"{wppl} ± {_fmt(half, '.3f')}" if half else wppl
                         rppl_s = f"{rppl} ± {_fmt(rhalf, '.3f')}" if rhalf else rppl
-                        wnl_s = f"{wnl} ± {_fmt(nhalf, '.3f')}" if nhalf else wnl
                     else:
-                        wppl_s, rppl_s, wnl_s = wppl, rppl, wnl
+                        wnl_s, wppl_s, rppl_s = wnl, wppl, rppl
 
                     row = f"| {kernel:>9s} | {ds_name:<9s} |"
                     if multi_mode:
                         row += f" {mode:<8s} |"
-                    row += f" {n} | {wppl_s:>16s} | {rppl_s:>14s} | {wnl_s:>14s} |\n"
+                    row += f" {n} | {wnl_s:>18s} | {wppl_s:>13s} | {rppl_s:>9s} |\n"
                     f.write(row)
         f.write("\n")
 
-        # ---- Per-dataset ranking (best kernel by CART-weighted PPL) ----
-        f.write("## Best kernel per dataset (lowest CART-weighted PPL)\n\n")
-        f.write("| Dataset | Best kernel | Weighted PPL | 2nd | 3rd |\n")
-        f.write("|---------|-------------|--------------|-----|-----|\n")
+        # ---- Per-dataset ranking (best kernel by CART loss) ----
+        f.write("## Best kernel per dataset (lowest CART loss)\n\n")
+        f.write("| Dataset | Best kernel | CART loss | 2nd | 3rd |\n")
+        f.write("|---------|-------------|-----------|-----|-----|\n")
         primary_mode = modes[0]
         for ds_name in datasets:
             ranked = sorted(
                 (
-                    (kernel, _agg(ds_name, primary_mode, kernel, "weighted_ppl"))
+                    (kernel, _agg(ds_name, primary_mode, kernel, "weighted_nll"))
                     for kernel in aggregated.keys()
                 ),
                 key=lambda kv: (kv[1] is None, kv[1]),
@@ -775,16 +853,16 @@ def save_cart_results(
                     return "—"
                 return f"{ranked[idx][0]} ({_fmt(ranked[idx][1])})"
             f.write(f"| {ds_name:<9s} | {_cell(0).split(' (')[0]:<11s} | "
-                    f"{_fmt(ranked[0][1]) if ranked else '—':>12s} | {_cell(1)} | {_cell(2)} |\n")
+                    f"{_fmt(ranked[0][1]) if ranked else '—':>9s} | {_cell(1)} | {_cell(2)} |\n")
         f.write("\n")
 
         # ---- Kernel average across datasets ----
-        f.write("## Kernel average across datasets (CART-weighted PPL)\n\n")
-        f.write("| Kernel | Mean W-PPL | Min | Max | Datasets |\n")
-        f.write("|--------|-----------|-----|-----|----------|\n")
+        f.write("## Kernel average across datasets (CART loss)\n\n")
+        f.write("| Kernel | Mean CART loss | Min | Max | Datasets |\n")
+        f.write("|--------|---------------|-----|-----|----------|\n")
         for kernel in sorted(aggregated.keys()):
             vals = [
-                _agg(ds_name, primary_mode, kernel, "weighted_ppl")
+                _agg(ds_name, primary_mode, kernel, "weighted_nll")
                 for ds_name in datasets
             ]
             vals = [v for v in vals if v is not None]
@@ -792,28 +870,28 @@ def save_cart_results(
                 f.write(f"| {kernel:>9s} | — | — | — | {len(datasets)} |\n")
                 continue
             f.write(
-                f"| {kernel:>9s} | {_fmt(float(np.mean(vals))):>9s} | "
+                f"| {kernel:>9s} | {_fmt(float(np.mean(vals))):>14s} | "
                 f"{_fmt(min(vals)):>5s} | {_fmt(max(vals)):>5s} | {len(vals)} |\n"
             )
         f.write("\n")
 
         if multi_mode:
-            f.write("## Mode averages across datasets (CART-weighted PPL)\n\n")
-            f.write("| Mode | Mean W-PPL | Datasets |\n")
-            f.write("|------|-----------|----------|\n")
+            f.write("## Mode averages across datasets (CART loss)\n\n")
+            f.write("| Mode | Mean CART loss | Datasets |\n")
+            f.write("|------|---------------|----------|\n")
             for mode in modes:
                 vals = [
-                    _agg(ds_name, mode, kernel, "weighted_ppl")
+                    _agg(ds_name, mode, kernel, "weighted_nll")
                     for kernel in aggregated.keys()
                     for ds_name in datasets
                 ]
                 vals = [v for v in vals if v is not None]
                 if vals:
-                    f.write(f"| {mode:<12s} | {_fmt(float(np.mean(vals))):>9s} | {len(vals)} |\n")
+                    f.write(f"| {mode:<12s} | {_fmt(float(np.mean(vals))):>14s} | {len(vals)} |\n")
             f.write("\n")
 
         f.write("## Artifacts\n\n")
-        f.write("- `cart_raw.csv` — one row per kernel × dataset × mode × seed (raw metrics)\n")
+        f.write("- `cart_raw.csv` — one row per kernel × dataset × mode × seed; `weighted_nll` is the CART loss\n")
         f.write("- `cart_benchmark_results.csv` — mean, std and 95% CI per kernel × dataset × mode\n")
         f.write("- `cart_<kernel>_stage1_<dataset>_<mode>_seed<seed>.json` — per-run evaluator output\n")
 
@@ -1230,6 +1308,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
              "(default: auto-discover every dataset under --benchmarks-dir)",
     )
     parser.add_argument(
+        "--cart-report-only",
+        action="store_true",
+        help="Skip the cart GPU sweep and rebuild cart_benchmark_results.csv and "
+             "cart_benchmark_summary.md from the existing cart_raw.csv in --output-dir.",
+    )
+    parser.add_argument(
         "--output-dir",
         default="data/ablation_results",
         help="Directory for outputs (default: data/ablation_results)",
@@ -1388,20 +1472,31 @@ def main(argv: list[str] | None = None) -> None:
     if args.suite in ("cart", "all"):
         cart_modes = args.modes if args.modes else CART_MODES
         logger.info(f"[cart] Modes: {cart_modes}")
-        cart_result = run_cart_benchmark_suite(
-            models=models,
-            modes=cart_modes,
-            seeds=args.seeds,
-            benchmarks_dir=args.benchmarks_dir,
-            datasets=args.datasets,
-            results_dir=args.output_dir,
-            limit_val_batches=args.limit_val_batches,
-            checkpoint_dir_overrides=checkpoint_dir_overrides,
-            cache_dataloaders=args.cache_dataloaders,
-        )
+        cart_seeds = args.seeds
+        if args.cart_report_only:
+            raw_csv = os.path.join(args.output_dir, "cart_raw.csv")
+            if not os.path.exists(raw_csv):
+                parser.error(f"--cart-report-only: no raw results found at {raw_csv}")
+            logger.info(f"[cart] Report-only: re-aggregating {raw_csv}")
+            raw_rows = _cart_rows_from_csv(raw_csv)
+            cart_seeds = len({row.get("seed") for row in raw_rows})
+            logger.info(f"[cart] Loaded {len(raw_rows)} per-seed rows ({cart_seeds} seeds)")
+            cart_result = rebuild_cart_result_from_raw(raw_rows, args.limit_val_batches)
+        else:
+            cart_result = run_cart_benchmark_suite(
+                models=models,
+                modes=cart_modes,
+                seeds=args.seeds,
+                benchmarks_dir=args.benchmarks_dir,
+                datasets=args.datasets,
+                results_dir=args.output_dir,
+                limit_val_batches=args.limit_val_batches,
+                checkpoint_dir_overrides=checkpoint_dir_overrides,
+                cache_dataloaders=args.cache_dataloaders,
+            )
         outputs["cart_markdown"] = save_cart_results(
             cart_result,
-            seeds=args.seeds,
+            seeds=cart_seeds,
             results_dir=args.output_dir,
             benchmarks_dir=args.benchmarks_dir,
         )

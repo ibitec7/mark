@@ -117,7 +117,7 @@ Outputs land in `data/benchmark_results/`:
 - One JSON per run: `data/benchmark_results/<kernel>_stage1_<dataset>.json`
 - Aggregated copy: `data/benchmark_results/summary.json`
 
-Each JSON contains `raw_*` and `weighted_*` metrics. For the CART-weighted objective discussed in the paper, read **`weighted_ppl`** (and the corresponding `weighted_nll` / `weighted_bpb` if you prefer NLL or bits-per-byte). `raw_ppl` is the unweighted counterpart.
+Each JSON contains `raw_*` and `weighted_*` metrics. For the CART-weighted objective discussed in the paper, read **`weighted_nll`** — this *is* the CART loss (the CART-weighted token NLL). `weighted_ppl = exp(weighted_nll)` is the same number exponentiated and `weighted_bpb` is the bits-per-byte view; `raw_*` is the unweighted counterpart.
 
 For a quick sanity check without waiting for full passes, you can cap validation batches:
 
@@ -158,6 +158,11 @@ uv run python -m src.ablation --suite all --seeds 10
   leave-one-out ablation.
 - `cart` validates with the training-matching evaluator (NeMo
   `Trainer.validate`, diffusion masking, CART weights from `cart: true`).
+  **The reported metric is `weighted_nll` — the CART loss.** `weighted_ppl` is
+  `exp(weighted_nll)` and is only the exponentiated view of the same number.
+- `--cart-report-only` re-aggregates `cart_benchmark_results.csv` and
+  `cart_benchmark_summary.md` from an existing `cart_raw.csv` without touching
+  the GPU, which is how the report layout can be regenerated.
 - `--limit-val-batches N` caps each dataset at N validation batches (**an
   absolute batch count**). This is required for `arxiv` (78,463 packed
   sequences) and `pubmed` (143,414) which, at the released `batch_size: 1` and
