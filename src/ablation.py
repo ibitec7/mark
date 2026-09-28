@@ -1236,11 +1236,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--limit-val-batches",
-        type=float,
+        type=int,
         default=None,
-        help="Limit validation batches per dataset (smoke tests, and the cap for the "
-             "large cart datasets such as arxiv/pubmed). Datasets with fewer batches "
-             "are still evaluated in full.",
+        metavar="N",
+        help="Cap the number of validation batches per dataset at N (an absolute batch "
+             "count, not a fraction). Used for smoke tests and as the evaluation cap for "
+             "the large cart datasets such as arxiv/pubmed; datasets with fewer than N "
+             "batches are still evaluated in full.",
     )
     parser.add_argument(
         "--modes",
@@ -1344,6 +1346,9 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.seeds < 1:
         parser.error("--seeds must be >= 1")
+
+    if args.limit_val_batches is not None and args.limit_val_batches < 1:
+        parser.error("--limit-val-batches must be >= 1 (absolute batch count)")
 
     try:
         checkpoint_dir_overrides = parse_checkpoint_dir_overrides(args.checkpoint_dir)
