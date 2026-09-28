@@ -1,11 +1,22 @@
 # ================================================
-# MaRK SSM Parameter Ablation — Validation Loss
+# MaRK ablation driver — one entry point, three suites.
 #
-# Isolates which SSM parameters (A, B, C, dt/Δ, D)
-# contribute to validation loss by selectively
-# freezing subsets after MaRK modulation.
+#   --suite loo        SSM parameter leave-one-out ablation (WikiText)
+#                      → data/ablation_results/ablation_{results.csv,summary.md}
+#   --suite cart       CART-weighted validation benchmarks over every dataset
+#                      in data/benchmarks/ (multi-seed, 95% CI)
+#                      → data/ablation_results/cart_{raw.csv,benchmark_results.csv,benchmark_summary.md}
+#   --suite profiling  AdaLN-Zero vs Input-Injection vs MaRK kernel profiling
+#                      (delegates to the companion `experiment` repo's
+#                      profiling.profile_multiseed multi-seed suite)
+#                      → data/ablation_results/profiling/…
+#   --suite all        run all three suites in sequence
 #
-# Run: cd /home/admin/Desktop/mark && python -m src.ablation
+# Examples:
+#   python -m src.ablation --suite loo  --seeds 10
+#   python -m src.ablation --suite cart --seeds 10 --limit-val-batches 500
+#   python -m src.ablation --suite profiling --profiling-seeds 15
+#   python -m src.ablation --suite all  --seeds 10
 # ================================================
 
 import argparse
@@ -14,6 +25,8 @@ import json
 import logging
 import math
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -21,6 +34,7 @@ import torch
 import numpy as np
 
 from .perplexity import (
+    BENCHMARKS_DIR,
     MODEL_REGISTRY,
     _load_model_and_trainer,
     apply_checkpoint_dir_overrides,
@@ -28,7 +42,7 @@ from .perplexity import (
     resolve_runtime_path,
     SUPPORTED_KERNELS,
 )
-from .utils import log_setup
+from .utils import arrow_dataloader, load_config, log_setup
 
 LOG_FILE = os.path.join("logs", "ablation.log")
 LOG_LEVEL = logging.INFO
@@ -66,11 +80,40 @@ MODE_PARAMS = {
     "none":          {"A": False, "B": False, "C": False, "dt": False, "D": False},
 }
 
+# Default mode(s) for the CART benchmark suite: evaluate the released model
+# exactly as trained (all params modulated). Override with --modes to also
+# sweep the leave-one-out modes across every dataset.
+CART_MODES = ["full"]
+
+# Suites selectable from the CLI.
+SUITES = ("loo", "cart", "profiling", "all")
+
 # Metrics we collect per evaluation
 METRIC_KEYS = ["raw_nll", "raw_ppl", "weighted_nll", "weighted_ppl"]
 
 # z-score for 95% CI (two-tailed)
 Z_95 = 1.96
+
+# Multi-seed distribution shared by every suite: seed i = 42 + i*100.
+BASE_SEED = 42
+SEED_STRIDE = 100
+
+# Default location of the companion repository that implements the
+# AdaLN-Zero / Input-Injection profiling benchmarks.
+DEFAULT_EXPERIMENT_DIR = "~/Desktop/experiment"
+
+
+def seed_for_index(seed_idx: int) -> int:
+    """Return the seed used for the ``seed_idx``-th replicate (0-based)."""
+    return BASE_SEED + seed_idx * SEED_STRIDE
+
+
+def _seed_everything(seed: int) -> None:
+    """Seed python/numpy/torch RNGs (validation masking is seed-dependent)."""
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def _inject_ablation_mode(model, mode: str) -> None:
@@ -92,19 +135,57 @@ def _inject_ablation_mode(model, mode: str) -> None:
         logger.info(f"Injected ablation_mode='{mode}' into {count} Hydra mixer layers")
 
 
+def ensure_base_weights(models) -> None:
+    """Materialize ``weights_path`` base checkpoints that have not been derived yet.
+
+    The benchmark configs point at ``models/hydra_bert_23layers_mark_base.pt``,
+    which is *derived* from the released ``models/hydra_bert_23layers.pt`` by
+    ``src.transfer``. A freshly provisioned machine normally only ships the
+    source checkpoint, so generate the derived file on demand instead of
+    failing with a confusing "no such file" error.
+    """
+    from .transfer import transfer_weights
+
+    source = resolve_runtime_path("models/hydra_bert_23layers.pt")
+
+    for entry in models:
+        train_config = load_config(entry.config_path, dict_config=True)
+        weights_path = resolve_runtime_path(str(train_config.get("weights_path", "")))
+        if not weights_path:
+            continue
+        if os.path.exists(weights_path):
+            continue
+
+        if not os.path.exists(source):
+            raise FileNotFoundError(
+                f"Base weights '{weights_path}' referenced by {entry.config_path} are missing, "
+                f"and the source checkpoint '{source}' is unavailable, so they cannot be derived."
+            )
+
+        logger.info(
+            f"[{entry.name}] Derived base weights missing ({weights_path}); "
+            f"generating from {source}"
+        )
+        transfer_weights(
+            source_path=source,
+            config_path=entry.config_path,
+            output_path=weights_path,
+        )
+
+
 def _ensure_wikitext_data(wikitext_dir: str) -> str:
     """Ensure WikiText packed parquet is available as a benchmark dataset.
-    
+
     Creates data/benchmarks/wikitext/ if needed by symlinking/copying
     the packed parquet from the wikitext source directory.
     """
     source = Path(wikitext_dir)
     target = Path("data/benchmarks/wikitext")
-    
+
     # If target already has parquet files, use it
     if target.exists() and list(target.rglob("*.parquet")):
         return str(target.absolute())
-    
+
     # Find parquet files in source
     parquet_files = list(source.rglob("*.parquet"))
     if not parquet_files:
@@ -112,9 +193,9 @@ def _ensure_wikitext_data(wikitext_dir: str) -> str:
             f"No .parquet files found in {wikitext_dir}. "
             "Run prepare_data.py first or point to data/wikitext/"
         )
-    
+
     target.mkdir(parents=True, exist_ok=True)
-    
+
     for pf in parquet_files:
         dst = target / pf.name
         if not dst.exists():
@@ -122,10 +203,10 @@ def _ensure_wikitext_data(wikitext_dir: str) -> str:
                 dst.symlink_to(pf.absolute())
                 logger.info(f"Symlinked {pf.name} → {target}/")
             except OSError:
-                import shutil
-                shutil.copy2(pf, dst)
+                import shutil as _shutil
+                _shutil.copy2(pf, dst)
                 logger.info(f"Copied {pf.name} → {target}/")
-    
+
     return str(target.absolute())
 
 
@@ -137,14 +218,10 @@ def _run_ablation_evaluation(
     limit_val_batches: int | float | None,
     seed: int,
 ) -> dict | None:
-    """Run a single ablation evaluation: load model, inject mode, validate."""
+    """Run a single leave-one-out ablation evaluation on WikiText."""
     from .perplexity import _evaluate_single
 
-    # Seed everything for reproducibility
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    _seed_everything(seed)
 
     logger.info("")
     logger.info(f"{'='*70}")
@@ -196,6 +273,10 @@ def _run_ablation_evaluation(
 def _compute_statistics(seed_metrics: list[dict]) -> dict:
     """Compute mean, std, and 95% CI across seeds for each metric key.
 
+    Uses the same estimator as the WikiText leave-one-out ablation:
+    sample standard deviation with ``ddof=1`` and a normal (z=1.96)
+    95% confidence interval on the standard error of the mean.
+
     Args:
         seed_metrics: List of metrics dicts, one per seed.
 
@@ -233,6 +314,10 @@ def _compute_statistics(seed_metrics: list[dict]) -> dict:
     return result
 
 
+# =============================================================================
+# Suite 1 — leave-one-out SSM parameter ablation (WikiText)
+# =============================================================================
+
 def run_ablation_suite(
     models=None,
     modes=None,
@@ -242,7 +327,7 @@ def run_ablation_suite(
     limit_val_batches: int | float | None = None,
     checkpoint_dir_overrides: dict[str, list[str]] | None = None,
 ) -> dict:
-    """Run full ablation suite: all kernels × all modes × N seeds on WikiText.
+    """Run the leave-one-out ablation suite: all kernels × all modes × N seeds.
 
     Returns:
         dict: {kernel: {mode: aggregated_metrics_dict}}
@@ -255,6 +340,8 @@ def run_ablation_suite(
     models = apply_checkpoint_dir_overrides(models, checkpoint_dir_overrides)
 
     os.makedirs(results_dir, exist_ok=True)
+
+    ensure_base_weights(models)
 
     # Setup WikiText data
     wikitext_benchmark_dir = _ensure_wikitext_data(wikitext_dir)
@@ -280,16 +367,13 @@ def run_ablation_suite(
             seed_metrics: list[dict] = []
 
             for seed_idx in range(seeds):
-                # Deterministic seed offset: base seed 42 + kernel index + seed index
-                # to keep seeds reproducible across runs
-                actual_seed = 42 + seed_idx * 100
                 result = _run_ablation_evaluation(
                     entry=entry,
                     mode=mode,
                     wikitext_benchmark_dir=wikitext_benchmark_dir,
                     results_dir=results_dir,
                     limit_val_batches=limit_val_batches,
-                    seed=actual_seed,
+                    seed=seed_for_index(seed_idx),
                 )
                 if result:
                     seed_metrics.append(result)
@@ -319,6 +403,530 @@ def run_ablation_suite(
     return all_results
 
 
+# =============================================================================
+# Suite 2 — CART-weighted validation benchmarks over data/benchmarks
+# =============================================================================
+
+def _evaluate_with_loader(
+    model,
+    trainer,
+    dataset_name: str,
+    dataset_dir: str,
+    output_path: str,
+    val_dl,
+) -> dict | None:
+    """Validate ``model`` on a pre-built dataloader and return the written metrics.
+
+    Mirrors ``perplexity._evaluate_single`` but accepts an already-built
+    dataloader so large benchmark sets are not re-read for every seed.
+    """
+    model.reset_benchmark_state()
+    model.val_dir = dataset_dir
+    model.benchmark_path = output_path
+    model._val_dl = val_dl  # force dataloader reuse
+
+    with torch.inference_mode():
+        trainer.validate(model, val_dl, ckpt_path=None)
+
+    if os.path.exists(output_path):
+        with open(output_path) as f:
+            return json.load(f)
+    return None
+
+
+def _build_val_dataloader(train_config, dataset_dir: str):
+    """Build the validation dataloader used by the CART benchmark harness."""
+    return arrow_dataloader(
+        data_dir=dataset_dir,
+        split="validation",
+        batch_size=train_config.get("batch_size", 1),
+        num_workers=train_config.get("num_workers", 4),
+        keep_in_memory=True,
+    )
+
+
+def _count_dataset_batches(val_dl) -> int | None:
+    """Best-effort number of batches in a dataloader (None when unknown)."""
+    try:
+        return len(val_dl)
+    except (TypeError, AttributeError):
+        return None
+
+
+def run_cart_benchmark_suite(
+    models=None,
+    modes=None,
+    seeds: int = 1,
+    benchmarks_dir: str = BENCHMARKS_DIR,
+    datasets: list[str] | None = None,
+    results_dir: str = "data/ablation_results",
+    limit_val_batches: int | float | None = None,
+    checkpoint_dir_overrides: dict[str, list[str]] | None = None,
+    cache_dataloaders: bool = True,
+) -> dict:
+    """Run the CART-weighted validation benchmark ablation.
+
+    For every kernel × mode × seed, the released checkpoint is validated on
+    every dataset under ``benchmarks_dir`` using the training-matching CART
+    evaluator (NeMo ``Trainer.validate`` + diffusion masking + CART weights).
+    Metrics are aggregated across seeds with the same estimator as the
+    leave-one-out ablation.
+
+    Returns:
+        dict with keys:
+            ``aggregated``: {kernel: {mode: {dataset: stats}}}
+            ``raw``:        list of per-(kernel, mode, dataset, seed) rows
+            ``datasets``:   the evaluated dataset names
+            ``modes``:      the evaluated ablation modes
+    """
+    if models is None:
+        models = MODEL_REGISTRY
+    if modes is None:
+        modes = CART_MODES
+
+    models = apply_checkpoint_dir_overrides(models, checkpoint_dir_overrides)
+
+    ensure_base_weights(models)
+
+    if datasets is None:
+        datasets = discover_datasets(benchmarks_dir)
+
+    os.makedirs(results_dir, exist_ok=True)
+
+    total_evals = len(models) * len(modes) * len(datasets) * seeds
+    logger.info(
+        f"Running {total_evals} CART benchmark evaluations "
+        f"({len(models)} kernels × {len(modes)} modes × {len(datasets)} datasets × {seeds} seeds)"
+    )
+    logger.info(f"Datasets: {datasets}")
+    if limit_val_batches is not None:
+        logger.info(f"Per-dataset validation cap: {limit_val_batches} batches")
+
+    aggregated: dict[str, dict[str, dict[str, dict]]] = {}
+    raw_rows: list[dict] = []
+
+    for entry in models:
+        kernel = entry.kernel
+        logger.info(f"\n{'#'*70}")
+        logger.info(f"# KERNEL: {kernel}")
+        logger.info(f"{'#'*70}")
+
+        aggregated[kernel] = {}
+
+        for mode in modes:
+            logger.info(f"\n{'='*70}")
+            logger.info(f"# KERNEL {kernel} — MODE {mode}")
+            logger.info(f"{'='*70}")
+
+            dataset_seed_metrics: dict[str, list[dict]] = {ds: [] for ds in datasets}
+
+            # Pre-build dataloaders once per (mode) so large parquet sets
+            # (arxiv/pubmed) are read a single time instead of once per seed.
+            dl_cache: dict[str, object] = {}
+
+            for seed_idx in range(seeds):
+                seed = seed_for_index(seed_idx)
+                _seed_everything(seed)
+
+                model, trainer, train_config, ckpt_path = _load_model_and_trainer(entry)
+                if limit_val_batches is not None:
+                    trainer.limit_val_batches = limit_val_batches
+                _inject_ablation_mode(model, mode)
+
+                try:
+                    for ds_name in datasets:
+                        ds_dir = os.path.join(benchmarks_dir, ds_name)
+                        output_path = os.path.join(
+                            results_dir, f"cart_{entry.name}_{ds_name}_{mode}_seed{seed}.json"
+                        )
+
+                        if cache_dataloaders:
+                            if ds_name not in dl_cache:
+                                dl_cache[ds_name] = _build_val_dataloader(train_config, ds_dir)
+                                logger.info(
+                                    f"  [{entry.name}|{ds_name}] dataloader built "
+                                    f"({_count_dataset_batches(dl_cache[ds_name])} batches)"
+                                )
+                            val_dl = dl_cache[ds_name]
+                        else:
+                            val_dl = _build_val_dataloader(train_config, ds_dir)
+
+                        # Re-seed immediately before each dataset validation so the
+                        # diffusion masking / timestep sampling is reproducible and
+                        # identical across datasets for a given seed.
+                        _seed_everything(seed)
+
+                        try:
+                            metrics = _evaluate_with_loader(
+                                model=model,
+                                trainer=trainer,
+                                dataset_name=ds_name,
+                                dataset_dir=ds_dir,
+                                output_path=output_path,
+                                val_dl=val_dl,
+                            )
+                        except Exception as exc:  # noqa: BLE001 - keep the sweep alive
+                            logger.error(f"  [{entry.name}|{ds_name}|{mode}|seed={seed}] failed: {exc}")
+                            metrics = {"error": str(exc)}
+
+                        if not metrics:
+                            metrics = {"error": "no_metrics"}
+
+                        slim = {k: metrics.get(k) for k in METRIC_KEYS if k in metrics}
+                        dataset_seed_metrics[ds_name].append(slim or {"error": "no_metrics"})
+
+                        raw_rows.append({
+                            "kernel": kernel,
+                            "mode": mode,
+                            "dataset": ds_name,
+                            "seed": seed,
+                            **{k: (slim or {}).get(k) for k in METRIC_KEYS},
+                            "error": metrics.get("error", ""),
+                        })
+
+                        logger.info(
+                            f"  [{entry.name}|{ds_name}|{mode}|seed={seed}] "
+                            f"weighted_ppl={slim.get('weighted_ppl') if slim else 'N/A'} "
+                            f"raw_ppl={slim.get('raw_ppl') if slim else 'N/A'}"
+                        )
+                finally:
+                    del model, trainer, train_config
+                    torch.cuda.empty_cache()
+                    gc.collect()
+
+            aggregated[kernel][mode] = {
+                ds: _compute_statistics(dataset_seed_metrics[ds]) for ds in datasets
+            }
+
+            for ds in datasets:
+                agg = aggregated[kernel][mode][ds]
+                if agg.get("n_valid", 0) > 1:
+                    mean = agg.get("weighted_ppl_mean", float("nan"))
+                    half = mean - agg.get("weighted_ppl_ci95_low", float("nan"))
+                    logger.info(
+                        f"  [{kernel}|{ds}|{mode}] weighted_ppl = {mean:.4f} ± {half:.4f} "
+                        f"(95% CI, n={agg['n_valid']}/{agg['n_seeds']})"
+                    )
+
+    return {
+        "aggregated": aggregated,
+        "raw": raw_rows,
+        "datasets": datasets,
+        "modes": modes,
+        "limit_val_batches": limit_val_batches,
+    }
+
+
+def save_cart_results(
+    result: dict,
+    seeds: int = 1,
+    results_dir: str = "data/ablation_results",
+    benchmarks_dir: str = BENCHMARKS_DIR,
+) -> str:
+    """Save the CART benchmark ablation as raw CSV, aggregated CSV and Markdown.
+
+    Returns:
+        str: Path to the Markdown summary file.
+    """
+    import csv
+    from datetime import datetime
+
+    os.makedirs(results_dir, exist_ok=True)
+
+    aggregated = result["aggregated"]
+    raw_rows = result["raw"]
+    datasets = result["datasets"]
+    modes = result["modes"]
+    cap = result.get("limit_val_batches")
+
+    # ---- Raw per-seed CSV (one row per kernel × mode × dataset × seed) ----
+    raw_csv_path = os.path.join(results_dir, "cart_raw.csv")
+    raw_fields = ["kernel", "mode", "dataset", "seed"] + METRIC_KEYS + ["error"]
+    with open(raw_csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=raw_fields, extrasaction="ignore")
+        writer.writeheader()
+        for row in raw_rows:
+            writer.writerow(row)
+    logger.info(f"Raw per-seed CSV saved to {raw_csv_path}")
+
+    # ---- Aggregated CSV (mean ± CI per kernel × mode × dataset) ----
+    agg_rows: list[dict] = []
+    for kernel, mode_dict in aggregated.items():
+        for mode, dataset_dict in mode_dict.items():
+            for ds_name, agg in dataset_dict.items():
+                row = {
+                    "kernel": kernel,
+                    "mode": mode,
+                    "dataset": ds_name,
+                    "n_seeds": agg.get("n_valid", agg.get("n_seeds", 0)),
+                    "error": agg.get("error", ""),
+                }
+                for key in METRIC_KEYS:
+                    row[key] = agg.get(key)
+                    row[f"{key}_std"] = agg.get(f"{key}_std")
+                    row[f"{key}_ci95_low"] = agg.get(f"{key}_ci95_low")
+                    row[f"{key}_ci95_high"] = agg.get(f"{key}_ci95_high")
+                agg_rows.append(row)
+
+    agg_csv_path = os.path.join(results_dir, "cart_benchmark_results.csv")
+    agg_fields = ["kernel", "mode", "dataset", "n_seeds"]
+    for key in METRIC_KEYS:
+        agg_fields += [key, f"{key}_std", f"{key}_ci95_low", f"{key}_ci95_high"]
+    agg_fields.append("error")
+    with open(agg_csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=agg_fields, extrasaction="ignore")
+        writer.writeheader()
+        for row in agg_rows:
+            writer.writerow(row)
+    logger.info(f"Aggregated CSV saved to {agg_csv_path}")
+
+    # ---- Markdown summary ----
+    md_path = os.path.join(results_dir, "cart_benchmark_summary.md")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    multi_mode = len(modes) > 1
+    multi_seed = seeds > 1
+
+    def _agg(ds_name, mode, kernel, key):
+        agg = aggregated.get(kernel, {}).get(mode, {}).get(ds_name, {})
+        if not multi_seed:
+            return agg.get(key)
+        return agg.get(f"{key}_mean", agg.get(key))
+
+    def _half_ci(ds_name, mode, kernel, key):
+        agg = aggregated.get(kernel, {}).get(mode, {}).get(ds_name, {})
+        mean = agg.get(f"{key}_mean")
+        low = agg.get(f"{key}_ci95_low")
+        if mean is None or low is None:
+            return None
+        return mean - low
+
+    with open(md_path, "w") as f:
+        f.write("# MaRK CART-Weighted Validation Ablation — All Benchmark Datasets\n\n")
+        f.write(f"> Generated: {timestamp}\n")
+        f.write(f"> Seeds: {seeds} (seed i = {BASE_SEED} + i×{SEED_STRIDE})\n")
+        f.write(
+            "> Estimator: sample std with `ddof=1`; 95% CI = mean ± 1.96 × SEM "
+            "(same estimator as the WikiText leave-one-out SSM ablation)\n"
+        )
+        f.write(f"> Benchmark root: `{benchmarks_dir}`\n")
+        f.write(f"> Datasets ({len(datasets)}): {', '.join(datasets)}\n")
+        f.write(f"> Modes: {', '.join(modes)}\n")
+        f.write("> Evaluator: NeMo `Trainer.validate` with diffusion masking and CART weights\n")
+        if cap is not None:
+            f.write(
+                f"> **Validation cap:** first {int(cap)} validation batches per dataset "
+                "(datasets with fewer batches are evaluated in full)\n"
+            )
+        else:
+            f.write("> **Validation cap:** none — every dataset is evaluated in full\n")
+        f.write("\n")
+
+        f.write("## Results: CART-weighted (and raw) perplexity per dataset\n\n")
+        header = "| Kernel | Dataset |"
+        if multi_mode:
+            header += " Mode |"
+        header += " n | Weighted PPL ↓ | Raw PPL ↓ | Weighted NLL ↓ |\n"
+        f.write(header)
+        sep = "|--------|---------|"
+        if multi_mode:
+            sep += "------|"
+        sep += "---|---|---------------|-----------|----------------|\n"
+        f.write(sep)
+
+        for kernel in sorted(aggregated.keys()):
+            for mode in modes:
+                for ds_name in datasets:
+                    n = aggregated[kernel][mode][ds_name].get("n_valid", 0)
+                    wppl = _fmt(_agg(ds_name, mode, kernel, "weighted_ppl"))
+                    half = _half_ci(ds_name, mode, kernel, "weighted_ppl")
+                    rppl = _fmt(_agg(ds_name, mode, kernel, "raw_ppl"))
+                    rhalf = _half_ci(ds_name, mode, kernel, "raw_ppl")
+                    wnl = _fmt(_agg(ds_name, mode, kernel, "weighted_nll"))
+                    nhalf = _half_ci(ds_name, mode, kernel, "weighted_nll")
+                    if multi_seed:
+                        wppl_s = f"{wppl} ± {_fmt(half, '.3f')}" if half else wppl
+                        rppl_s = f"{rppl} ± {_fmt(rhalf, '.3f')}" if rhalf else rppl
+                        wnl_s = f"{wnl} ± {_fmt(nhalf, '.3f')}" if nhalf else wnl
+                    else:
+                        wppl_s, rppl_s, wnl_s = wppl, rppl, wnl
+
+                    row = f"| {kernel:>9s} | {ds_name:<9s} |"
+                    if multi_mode:
+                        row += f" {mode:<8s} |"
+                    row += f" {n} | {wppl_s:>16s} | {rppl_s:>14s} | {wnl_s:>14s} |\n"
+                    f.write(row)
+        f.write("\n")
+
+        # ---- Per-dataset ranking (best kernel by CART-weighted PPL) ----
+        f.write("## Best kernel per dataset (lowest CART-weighted PPL)\n\n")
+        f.write("| Dataset | Best kernel | Weighted PPL | 2nd | 3rd |\n")
+        f.write("|---------|-------------|--------------|-----|-----|\n")
+        primary_mode = modes[0]
+        for ds_name in datasets:
+            ranked = sorted(
+                (
+                    (kernel, _agg(ds_name, primary_mode, kernel, "weighted_ppl"))
+                    for kernel in aggregated.keys()
+                ),
+                key=lambda kv: (kv[1] is None, kv[1]),
+            )
+            def _cell(idx):
+                if idx >= len(ranked) or ranked[idx][1] is None:
+                    return "—"
+                return f"{ranked[idx][0]} ({_fmt(ranked[idx][1])})"
+            f.write(f"| {ds_name:<9s} | {_cell(0).split(' (')[0]:<11s} | "
+                    f"{_fmt(ranked[0][1]) if ranked else '—':>12s} | {_cell(1)} | {_cell(2)} |\n")
+        f.write("\n")
+
+        # ---- Kernel average across datasets ----
+        f.write("## Kernel average across datasets (CART-weighted PPL)\n\n")
+        f.write("| Kernel | Mean W-PPL | Min | Max | Datasets |\n")
+        f.write("|--------|-----------|-----|-----|----------|\n")
+        for kernel in sorted(aggregated.keys()):
+            vals = [
+                _agg(ds_name, primary_mode, kernel, "weighted_ppl")
+                for ds_name in datasets
+            ]
+            vals = [v for v in vals if v is not None]
+            if not vals:
+                f.write(f"| {kernel:>9s} | — | — | — | {len(datasets)} |\n")
+                continue
+            f.write(
+                f"| {kernel:>9s} | {_fmt(float(np.mean(vals))):>9s} | "
+                f"{_fmt(min(vals)):>5s} | {_fmt(max(vals)):>5s} | {len(vals)} |\n"
+            )
+        f.write("\n")
+
+        if multi_mode:
+            f.write("## Mode averages across datasets (CART-weighted PPL)\n\n")
+            f.write("| Mode | Mean W-PPL | Datasets |\n")
+            f.write("|------|-----------|----------|\n")
+            for mode in modes:
+                vals = [
+                    _agg(ds_name, mode, kernel, "weighted_ppl")
+                    for kernel in aggregated.keys()
+                    for ds_name in datasets
+                ]
+                vals = [v for v in vals if v is not None]
+                if vals:
+                    f.write(f"| {mode:<12s} | {_fmt(float(np.mean(vals))):>9s} | {len(vals)} |\n")
+            f.write("\n")
+
+        f.write("## Artifacts\n\n")
+        f.write("- `cart_raw.csv` — one row per kernel × dataset × mode × seed (raw metrics)\n")
+        f.write("- `cart_benchmark_results.csv` — mean, std and 95% CI per kernel × dataset × mode\n")
+        f.write("- `cart_<kernel>_stage1_<dataset>_<mode>_seed<seed>.json` — per-run evaluator output\n")
+
+    logger.info(f"Markdown summary saved to {md_path}")
+    return md_path
+
+
+# =============================================================================
+# Suite 3 — AdaLN-Zero / Input-Injection profiling (companion repo delegation)
+# =============================================================================
+
+def run_profiling_suite(
+    experiment_dir: str = DEFAULT_EXPERIMENT_DIR,
+    results_dir: str = "data/ablation_results",
+    seeds: int = 15,
+    mode: str = "both",
+    batch_sizes=(1, 4, 8),
+    seq_len: int = 512,
+    latency_n: int = 100,
+    warmup: int = 20,
+    tag: str | None = None,
+    python_exe: str | None = None,
+    extra_args=(),
+    summarize_only: bool = False,
+) -> dict:
+    """Run the AdaLN-Zero / Input-Injection / MaRK profiling ablation.
+
+    The profiling implementation lives in the companion ``experiment``
+    repository (``profiling.profile_multiseed``), which is the canonical
+    source for these measurements. This wrapper runs that suite with a fixed
+    multi-seed protocol and copies the reportable artifacts (raw CSV +
+    Markdown tables) into this repository's results directory.
+
+    Returns:
+        dict with the run's output directory, copied artifacts and summary path.
+    """
+    experiment_path = Path(os.path.expanduser(experiment_dir)).resolve()
+    runner = experiment_path / "profiling" / "profile_multiseed.py"
+    if not runner.exists():
+        raise FileNotFoundError(
+            f"Profiling suite not found at {runner}. "
+            f"Set --experiment-dir to the checkout of the companion 'experiment' repository."
+        )
+
+    run_tag = tag or f"seq{seq_len}_{seeds}seeds"
+    run_out = experiment_path / "profiling" / "results" / run_tag
+    dest_dir = Path(results_dir) / "profiling" / run_tag
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    exe = python_exe or sys.executable
+    cmd = [
+        exe, "-m", "profiling.profile_multiseed",
+        "--mode", mode,
+        "--seeds", str(seeds),
+        "--batch-sizes", *[str(b) for b in batch_sizes],
+        "--seq-len", str(seq_len),
+        "--latency-n", str(latency_n),
+        "--warmup", str(warmup),
+        "--frozen",
+        "--precompile",
+        "--output", str(run_out),
+        *extra_args,
+    ]
+
+    if summarize_only and run_out.exists():
+        logger.info(f"Skipping profiling run; reusing existing artifacts in {run_out}")
+    else:
+        logger.info(f"Running profiling suite in {experiment_path}:")
+        logger.info("  " + " ".join(cmd))
+        completed = subprocess.run(cmd, cwd=str(experiment_path), check=False)
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"Profiling suite exited with code {completed.returncode}. "
+                f"Check that the companion repo's environment is active "
+                f"(or pass --profiling-python)."
+            )
+
+    copied: list[str] = []
+    for pattern in ("*.md", "*.csv", "*.txt"):
+        for src in sorted(run_out.glob(pattern)):
+            dst = dest_dir / src.name
+            shutil.copy2(src, dst)
+            copied.append(str(dst))
+
+    summary_path = Path(results_dir) / "profiling_summary.md"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(summary_path, "w") as f:
+        f.write("# MaRK Profiling Ablation — AdaLN-Zero vs Input-Injection vs MaRK Kernels\n\n")
+        f.write(f"> Source: `{experiment_path}` (`profiling.profile_multiseed`)\n")
+        f.write(f"> Seeds: {seeds} | Latency iterations/seed: {latency_n} | Warmup: {warmup}\n")
+        f.write(f"> Mode: {mode} | Batch sizes: {list(batch_sizes)} | Seq len: {seq_len}\n")
+        f.write(f"> Artifacts: `{dest_dir}`\n\n")
+        for name in ("adapter_table.md", "e2e_table_bs1.md", "e2e_table_bs4.md", "e2e_table_bs8.md"):
+            candidate = dest_dir / name
+            if candidate.exists():
+                f.write(f"## {name}\n\n")
+                f.write(candidate.read_text())
+                f.write("\n")
+    logger.info(f"Profiling summary saved to {summary_path}")
+
+    return {
+        "experiment_dir": str(experiment_path),
+        "output_dir": str(run_out),
+        "artifacts_dir": str(dest_dir),
+        "copied": copied,
+        "summary_path": str(summary_path),
+    }
+
+
+# =============================================================================
+# Reporting helpers
+# =============================================================================
+
 def _fmt(val, fmt_str: str = ".4f") -> str:
     """Format a float or return '—' if None."""
     if val is None or (isinstance(val, float) and val != val):
@@ -338,7 +946,7 @@ def save_results(
     seeds: int = 1,
     results_dir: str = "data/ablation_results",
 ) -> str:
-    """Save ablation results as CSV and Markdown table.
+    """Save leave-one-out ablation results as CSV and Markdown table.
 
     When seeds > 1, reports mean ± std with 95% CI.
 
@@ -396,14 +1004,14 @@ def save_results(
     with open(md_path, "w") as f:
         f.write("# MaRK SSM Parameter Ablation — Validation Loss on WikiText\n\n")
         f.write(f"> Generated: {timestamp}\n")
-        f.write(f"> Seeds: {seeds}  |  Seed offset: 42 + i×100\n\n")
+        f.write(f"> Seeds: {seeds}  |  Seed offset: {BASE_SEED} + i×{SEED_STRIDE}\n\n")
 
         # ---- Statistical note if multi-seed ----
         if seeds > 1:
             f.write(
                 "**Note:** Results are reported as mean ± 95% CI across "
-                f"{seeds} seeds. Seed 1 uses `torch.manual_seed(42)`, "
-                "subsequent seeds use 42 + i×100.\n\n"
+                f"{seeds} seeds. Seed 1 uses `torch.manual_seed({BASE_SEED})`, "
+                f"subsequent seeds use {BASE_SEED} + i×{SEED_STRIDE}.\n\n"
             )
 
         # ---- Main results table ----
@@ -490,12 +1098,8 @@ def save_results(
             "recurrence parameter A contributes beyond Mamba-style selection "
             "(which already modulates Δ, B, and C).\n\n"
         )
-        if seeds > 1:
-            f.write("| Kernel | Full W-PPL | All-except-A W-PPL | Δ W-PPL | A Contribution |\n")
-            f.write("|--------|-----------|-------------------|---------|---------------|\n")
-        else:
-            f.write("| Kernel | Full W-PPL | All-except-A W-PPL | Δ W-PPL | A Contribution |\n")
-            f.write("|--------|-----------|-------------------|---------|---------------|\n")
+        f.write("| Kernel | Full W-PPL | All-except-A W-PPL | Δ W-PPL | A Contribution |\n")
+        f.write("|--------|-----------|-------------------|---------|---------------|\n")
         for kernel in sorted(all_results.keys()):
             full_m = all_results[kernel].get("full", {})
             noA_m = all_results[kernel].get("all_except_A", {})
@@ -552,24 +1156,14 @@ def save_results(
 
         # ---- Full table with all metrics ----
         f.write("## Full Results (All Metrics)\n\n")
-        if seeds > 1:
-            full_header = (
-                "| Kernel | Mode | Raw NLL | Raw PPL | "
-                "Weighted NLL | Weighted PPL |\n"
-            )
-            full_sep = (
-                "|--------|------|---------|---------|"
-                "-------------|-------------|\n"
-            )
-        else:
-            full_header = (
-                "| Kernel | Mode | Raw NLL | Raw PPL | "
-                "Weighted NLL | Weighted PPL |\n"
-            )
-            full_sep = (
-                "|--------|------|---------|---------|"
-                "-------------|-------------|\n"
-            )
+        full_header = (
+            "| Kernel | Mode | Raw NLL | Raw PPL | "
+            "Weighted NLL | Weighted PPL |\n"
+        )
+        full_sep = (
+            "|--------|------|---------|---------|"
+            "-------------|-------------|\n"
+        )
         f.write(full_header)
         f.write(full_sep)
         for row in rows:
@@ -595,9 +1189,21 @@ def save_results(
     return md_path
 
 
+# =============================================================================
+# CLI
+# =============================================================================
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="MaRK SSM parameter ablation: validation loss on WikiText"
+        description="MaRK ablation driver: leave-one-out SSM ablation (loo), "
+                    "CART benchmark ablation (cart), AdaLN/Input-Injection profiling "
+                    "(profiling), or all suites."
+    )
+    parser.add_argument(
+        "--suite",
+        choices=SUITES,
+        default="loo",
+        help="Which ablation suite to run (default: loo).",
     )
     parser.add_argument(
         "--checkpoint-dir",
@@ -612,6 +1218,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Path to WikiText packed parquet data (default: data/wikitext)",
     )
     parser.add_argument(
+        "--benchmarks-dir",
+        default=BENCHMARKS_DIR,
+        help=f"Benchmark dataset root for the cart suite (default: {BENCHMARKS_DIR})",
+    )
+    parser.add_argument(
+        "--datasets",
+        nargs="+",
+        default=None,
+        help="Dataset subdirectories to evaluate in the cart suite "
+             "(default: auto-discover every dataset under --benchmarks-dir)",
+    )
+    parser.add_argument(
         "--output-dir",
         default="data/ablation_results",
         help="Directory for outputs (default: data/ablation_results)",
@@ -620,13 +1238,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--limit-val-batches",
         type=float,
         default=None,
-        help="Limit validation batches for smoke tests",
+        help="Limit validation batches per dataset (smoke tests, and the cap for the "
+             "large cart datasets such as arxiv/pubmed). Datasets with fewer batches "
+             "are still evaluated in full.",
     )
     parser.add_argument(
         "--modes",
         nargs="+",
         default=None,
-        help=f"Ablation modes to run (default: 'all_except_A' only — the reviewer-relevant one). "
+        help=f"Ablation modes to run. loo default: 'all_except_A' only. "
+             f"cart default: 'full' (the model as trained). "
              f"All supported: {{{', '.join(ALL_MODES)}}}",
     )
     parser.add_argument(
@@ -640,8 +1261,77 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=int,
         default=1,
         metavar="N",
-        help="Number of seeds to run per (kernel, mode) pair. Reports mean ± 95%% CI. "
-             "Seeds are 42, 142, 242, ... (default: 1)",
+        help="Number of seeds for the loo/cart suites (default: 1). "
+             f"Seeds are {BASE_SEED}, {BASE_SEED + SEED_STRIDE}, {BASE_SEED + 2 * SEED_STRIDE}, ...",
+    )
+    parser.add_argument(
+        "--no-dataloader-cache",
+        dest="cache_dataloaders",
+        action="store_false",
+        default=True,
+        help="Rebuild the validation dataloader for every seed instead of caching it "
+             "per dataset (cart suite).",
+    )
+    # ---- profiling suite ----
+    parser.add_argument(
+        "--experiment-dir",
+        default=DEFAULT_EXPERIMENT_DIR,
+        help=f"Checkout of the companion 'experiment' repo holding the AdaLN/Input-Injection "
+             f"profiling suite (default: {DEFAULT_EXPERIMENT_DIR})",
+    )
+    parser.add_argument(
+        "--profiling-seeds",
+        type=int,
+        default=15,
+        help="Seeds for the profiling suite (default: 15, matching the published A100 runs)",
+    )
+    parser.add_argument(
+        "--profiling-mode",
+        choices=["adapter", "e2e", "both"],
+        default="both",
+        help="Profiling scope (default: both)",
+    )
+    parser.add_argument(
+        "--profiling-batch-sizes",
+        type=int,
+        nargs="+",
+        default=[1, 4, 8],
+        help="Batch sizes for the end-to-end profiling sweep (default: 1 4 8)",
+    )
+    parser.add_argument(
+        "--profiling-seq-len",
+        type=int,
+        default=512,
+        help="Sequence length for the end-to-end profiling sweep (default: 512)",
+    )
+    parser.add_argument(
+        "--profiling-latency-n",
+        type=int,
+        default=100,
+        help="Latency iterations per seed (default: 100)",
+    )
+    parser.add_argument(
+        "--profiling-warmup",
+        type=int,
+        default=20,
+        help="Warmup iterations (default: 20)",
+    )
+    parser.add_argument(
+        "--profiling-tag",
+        default=None,
+        help="Output tag for the profiling run (default: seq<len>_<seeds>seeds)",
+    )
+    parser.add_argument(
+        "--profiling-python",
+        default=None,
+        help="Python executable used to launch the companion repo's profiling suite "
+             "(default: the interpreter running this script)",
+    )
+    parser.add_argument(
+        "--profiling-summarize-only",
+        action="store_true",
+        default=False,
+        help="Do not run the profiling suite; only re-copy/summarize existing artifacts.",
     )
     return parser
 
@@ -660,7 +1350,6 @@ def main(argv: list[str] | None = None) -> None:
     except ValueError as exc:
         parser.error(str(exc))
 
-    modes = args.modes if args.modes else ABLATION_MODES
     kernels = args.kernels if args.kernels else None
 
     # Filter MODEL_REGISTRY by requested kernels
@@ -670,58 +1359,76 @@ def main(argv: list[str] | None = None) -> None:
         if not models:
             parser.error(f"No models match kernels: {kernels}")
 
+    logger.info(f"Suite: {args.suite}")
     logger.info(f"Kernels: {[m.kernel for m in models]}")
-    logger.info(f"Modes: {modes}")
     logger.info(f"Seeds: {args.seeds}")
-    logger.info(f"Total evaluations: {len(models) * len(modes) * args.seeds}")
 
-    all_results = run_ablation_suite(
-        models=models,
-        modes=modes,
-        seeds=args.seeds,
-        wikitext_dir=args.wikitext_dir,
-        results_dir=args.output_dir,
-        limit_val_batches=args.limit_val_batches,
-        checkpoint_dir_overrides=checkpoint_dir_overrides,
-    )
+    outputs: dict[str, str] = {}
 
-    md_path = save_results(all_results, seeds=args.seeds, results_dir=args.output_dir)
+    if args.suite in ("loo", "all"):
+        loo_modes = args.modes if args.modes else ABLATION_MODES
+        logger.info(f"[loo] Modes: {loo_modes}")
+        logger.info(f"[loo] Total evaluations: {len(models) * len(loo_modes) * args.seeds}")
+        loo_results = run_ablation_suite(
+            models=models,
+            modes=loo_modes,
+            seeds=args.seeds,
+            wikitext_dir=args.wikitext_dir,
+            results_dir=args.output_dir,
+            limit_val_batches=args.limit_val_batches,
+            checkpoint_dir_overrides=checkpoint_dir_overrides,
+        )
+        outputs["loo_markdown"] = save_results(loo_results, seeds=args.seeds, results_dir=args.output_dir)
+
+    if args.suite in ("cart", "all"):
+        cart_modes = args.modes if args.modes else CART_MODES
+        logger.info(f"[cart] Modes: {cart_modes}")
+        cart_result = run_cart_benchmark_suite(
+            models=models,
+            modes=cart_modes,
+            seeds=args.seeds,
+            benchmarks_dir=args.benchmarks_dir,
+            datasets=args.datasets,
+            results_dir=args.output_dir,
+            limit_val_batches=args.limit_val_batches,
+            checkpoint_dir_overrides=checkpoint_dir_overrides,
+            cache_dataloaders=args.cache_dataloaders,
+        )
+        outputs["cart_markdown"] = save_cart_results(
+            cart_result,
+            seeds=args.seeds,
+            results_dir=args.output_dir,
+            benchmarks_dir=args.benchmarks_dir,
+        )
+
+    if args.suite in ("profiling", "all"):
+        logger.info(f"[profiling] Seeds: {args.profiling_seeds}")
+        profiling_result = run_profiling_suite(
+            experiment_dir=args.experiment_dir,
+            results_dir=args.output_dir,
+            seeds=args.profiling_seeds,
+            mode=args.profiling_mode,
+            batch_sizes=args.profiling_batch_sizes,
+            seq_len=args.profiling_seq_len,
+            latency_n=args.profiling_latency_n,
+            warmup=args.profiling_warmup,
+            tag=args.profiling_tag,
+            python_exe=args.profiling_python,
+            summarize_only=args.profiling_summarize_only,
+        )
+        outputs["profiling_summary"] = profiling_result["summary_path"]
 
     # Print summary to console
     print("\n" + "=" * 80)
-    print("ABLATION COMPLETE")
+    print(f"ABLATION COMPLETE — suite={args.suite}")
     print("=" * 80)
-    print(f"Markdown summary: {md_path}")
-    print(f"CSV results:      {os.path.join(args.output_dir, 'ablation_results.csv')}")
-
-    # Print mini-table
-    kernels_sorted = sorted(all_results.keys())
-    if kernels_sorted:
-        n_seeds = args.seeds
-        print(f"\n{'Kernel':>10s}", end="")
-        for mode in modes:
-            if n_seeds > 1:
-                print(f" | {mode + ' (±95% CI)':<26s}", end="")
-            else:
-                print(f" | {mode:<14s}", end="")
-        print()
-        print("-" * (10 + 28 * len(modes)))
-        for kernel in kernels_sorted:
-            print(f"{kernel:>10s}", end="")
-            for mode in modes:
-                m = all_results[kernel].get(mode, {})
-                if n_seeds > 1:
-                    mean = m.get("weighted_ppl_mean")
-                    ci_lo = m.get("weighted_ppl_ci95_low")
-                    ci_hi = m.get("weighted_ppl_ci95_high")
-                    if mean is not None and ci_lo is not None:
-                        half = mean - ci_lo
-                        print(f" | {_fmt(mean)} ± {_fmt(half, '.3f'):>18s}", end="")
-                    else:
-                        print(f" | {_fmt(m.get('weighted_ppl')):>26s}", end="")
-                else:
-                    print(f" | {_fmt(m.get('weighted_ppl')):>14s}", end="")
-            print()
+    for label, path in outputs.items():
+        print(f"{label:<20s}: {path}")
+    if "loo_markdown" in outputs:
+        print(f"{'loo CSV':<20s}: {os.path.join(args.output_dir, 'ablation_results.csv')}")
+    if "cart_markdown" in outputs:
+        print(f"{'cart raw CSV':<20s}: {os.path.join(args.output_dir, 'cart_raw.csv')}")
+        print(f"{'cart agg CSV':<20s}: {os.path.join(args.output_dir, 'cart_benchmark_results.csv')}")
 
 
 if __name__ == "__main__":
