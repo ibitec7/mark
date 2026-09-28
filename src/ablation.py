@@ -116,6 +116,29 @@ def _seed_everything(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+def _rng_snapshot() -> dict:
+    """Capture the RNG state the leave-one-out harness validates from.
+
+    ``_load_model_and_trainer`` draws from the global RNG (Hydra initializes
+    ``dt_bias`` with ``torch.rand``), and validation draws again per batch
+    (``sample_timestep`` / ``masking_process``). Capturing the state immediately
+    after the model is built therefore pins the exact RNG state the LOO harness
+    is in when it starts validating a dataset.
+    """
+    state: dict = {"torch": torch.get_rng_state(), "numpy": np.random.get_state()}
+    if torch.cuda.is_available():
+        state["cuda"] = torch.cuda.get_rng_state_all()
+    return state
+
+
+def _rng_restore(state: dict) -> None:
+    """Restore a snapshot produced by :func:`_rng_snapshot`."""
+    torch.set_rng_state(state["torch"])
+    np.random.set_state(state["numpy"])
+    if "cuda" in state:
+        torch.cuda.set_rng_state_all(state["cuda"])
+
+
 def _inject_ablation_mode(model, mode: str) -> None:
     """Set ablation_mode on every Hydra mixer layer in the encoder."""
     encoder = model.inner.hydra.encoder
@@ -463,6 +486,7 @@ def run_cart_benchmark_suite(
     limit_val_batches: int | float | None = None,
     checkpoint_dir_overrides: dict[str, list[str]] | None = None,
     cache_dataloaders: bool = True,
+    rng_protocol: str = "loo",
 ) -> dict:
     """Run the CART-weighted validation benchmark ablation.
 
@@ -471,6 +495,15 @@ def run_cart_benchmark_suite(
     evaluator (NeMo ``Trainer.validate`` + diffusion masking + CART weights).
     Metrics are aggregated across seeds with the same estimator as the
     leave-one-out ablation.
+
+    ``rng_protocol`` selects how the RNG is positioned before each validation:
+
+    * ``"loo"`` (default) restores the state captured right after the model was
+      built, rebuilding the dataloader in the same position the leave-one-out
+      harness does. This reproduces the LOO harness draw-for-draw, so the
+      WikiText CART loss lines up with the committed LOO ``full`` row.
+    * ``"reseed"`` re-seeds from scratch before every dataset (order-invariant
+      across datasets, but not comparable with the LOO table).
 
     Returns:
         dict with keys:
@@ -499,6 +532,7 @@ def run_cart_benchmark_suite(
         f"({len(models)} kernels × {len(modes)} modes × {len(datasets)} datasets × {seeds} seeds)"
     )
     logger.info(f"Datasets: {datasets}")
+    logger.info(f"RNG protocol: {rng_protocol}")
     if limit_val_batches is not None:
         logger.info(f"Per-dataset validation cap: {limit_val_batches} batches")
 
@@ -533,6 +567,10 @@ def run_cart_benchmark_suite(
                     trainer.limit_val_batches = limit_val_batches
                 _inject_ablation_mode(model, mode)
 
+                # "loo" pins the RNG state the leave-one-out harness validates
+                # from (immediately after the model is built).
+                base_rng_state = _rng_snapshot() if rng_protocol == "loo" else None
+
                 try:
                     for ds_name in datasets:
                         ds_dir = os.path.join(benchmarks_dir, ds_name)
@@ -540,21 +578,27 @@ def run_cart_benchmark_suite(
                             results_dir, f"cart_{entry.name}_{ds_name}_{mode}_seed{seed}.json"
                         )
 
-                        if cache_dataloaders:
-                            if ds_name not in dl_cache:
-                                dl_cache[ds_name] = _build_val_dataloader(train_config, ds_dir)
-                                logger.info(
-                                    f"  [{entry.name}|{ds_name}] dataloader built "
-                                    f"({_count_dataset_batches(dl_cache[ds_name])} batches)"
-                                )
-                            val_dl = dl_cache[ds_name]
-                        else:
+                        if rng_protocol == "loo":
+                            # Draw-for-draw identical to `_evaluate_single`: restore
+                            # the post-load state, then build the loader, then validate.
+                            _rng_restore(base_rng_state)
                             val_dl = _build_val_dataloader(train_config, ds_dir)
+                        else:
+                            if cache_dataloaders:
+                                if ds_name not in dl_cache:
+                                    dl_cache[ds_name] = _build_val_dataloader(train_config, ds_dir)
+                                    logger.info(
+                                        f"  [{entry.name}|{ds_name}] dataloader built "
+                                        f"({_count_dataset_batches(dl_cache[ds_name])} batches)"
+                                    )
+                                val_dl = dl_cache[ds_name]
+                            else:
+                                val_dl = _build_val_dataloader(train_config, ds_dir)
 
-                        # Re-seed immediately before each dataset validation so the
-                        # diffusion masking / timestep sampling is reproducible and
-                        # identical across datasets for a given seed.
-                        _seed_everything(seed)
+                            # Re-seed immediately before each dataset validation so the
+                            # diffusion masking / timestep sampling is reproducible and
+                            # identical across datasets for a given seed.
+                            _seed_everything(seed)
 
                         try:
                             metrics = _evaluate_with_loader(
@@ -614,6 +658,7 @@ def run_cart_benchmark_suite(
         "datasets": datasets,
         "modes": modes,
         "limit_val_batches": limit_val_batches,
+        "rng_protocol": rng_protocol,
     }
 
 
@@ -643,6 +688,7 @@ def _cart_rows_from_csv(csv_path: str) -> list[dict]:
 def rebuild_cart_result_from_raw(
     raw_rows: list[dict],
     limit_val_batches: int | None = None,
+    rng_protocol: str = "loo",
 ) -> dict:
     """Re-aggregate a CART run from its raw per-seed rows (no GPU work).
 
@@ -684,6 +730,7 @@ def rebuild_cart_result_from_raw(
         "datasets": datasets,
         "modes": modes,
         "limit_val_batches": limit_val_batches,
+        "rng_protocol": rng_protocol,
     }
 
 
@@ -782,6 +829,20 @@ def save_cart_results(
         f.write(f"> Datasets ({len(datasets)}): {', '.join(datasets)}\n")
         f.write(f"> Modes: {', '.join(modes)}\n")
         f.write("> Evaluator: NeMo `Trainer.validate` with diffusion masking and CART weights\n")
+        protocol = result.get("rng_protocol", "loo")
+        if protocol == "loo":
+            f.write(
+                "> RNG protocol: `loo` — each dataset is validated from the RNG state "
+                "captured right after the model is built, matching the leave-one-out "
+                "harness draw-for-draw (so WikiText is directly comparable with the "
+                "LOO table)\n"
+            )
+        else:
+            f.write(
+                "> RNG protocol: `reseed` — the RNG is re-seeded from scratch before "
+                "every dataset (order-invariant across datasets, not comparable with "
+                "the LOO table)\n"
+            )
         f.write(
             "> **Primary metric:** `weighted_nll` = the **CART loss**. "
             "`weighted_ppl = exp(weighted_nll)` is the same number exponentiated.\n"
@@ -1314,6 +1375,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
              "cart_benchmark_summary.md from the existing cart_raw.csv in --output-dir.",
     )
     parser.add_argument(
+        "--cart-rng-protocol",
+        choices=("loo", "reseed"),
+        default="loo",
+        help="RNG protocol for the cart suite. 'loo' (default) restores the RNG state "
+             "captured right after the model is built before each dataset, reproducing "
+             "the leave-one-out harness draw-for-draw so the WikiText CART loss matches "
+             "the committed LOO table. 'reseed' re-seeds from scratch per dataset "
+             "(order-invariant, but not comparable with the LOO run).",
+    )
+    parser.add_argument(
         "--output-dir",
         default="data/ablation_results",
         help="Directory for outputs (default: data/ablation_results)",
@@ -1481,7 +1552,9 @@ def main(argv: list[str] | None = None) -> None:
             raw_rows = _cart_rows_from_csv(raw_csv)
             cart_seeds = len({row.get("seed") for row in raw_rows})
             logger.info(f"[cart] Loaded {len(raw_rows)} per-seed rows ({cart_seeds} seeds)")
-            cart_result = rebuild_cart_result_from_raw(raw_rows, args.limit_val_batches)
+            cart_result = rebuild_cart_result_from_raw(
+                raw_rows, args.limit_val_batches, args.cart_rng_protocol
+            )
         else:
             cart_result = run_cart_benchmark_suite(
                 models=models,
@@ -1493,6 +1566,7 @@ def main(argv: list[str] | None = None) -> None:
                 limit_val_batches=args.limit_val_batches,
                 checkpoint_dir_overrides=checkpoint_dir_overrides,
                 cache_dataloaders=args.cache_dataloaders,
+                rng_protocol=args.cart_rng_protocol,
             )
         outputs["cart_markdown"] = save_cart_results(
             cart_result,
