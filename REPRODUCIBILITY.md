@@ -163,6 +163,17 @@ uv run python -m src.ablation --suite all --seeds 10
 - `--cart-report-only` re-aggregates `cart_benchmark_results.csv` and
   `cart_benchmark_summary.md` from an existing `cart_raw.csv` without touching
   the GPU, which is how the report layout can be regenerated.
+- **RNG positioning is part of the protocol.** Validation draws from the global
+  RNG on every batch (`sample_timestep` → `torch.randint`, `masking_process` →
+  `torch.rand`), and building the model draws from it too (Hydra initializes
+  `dt_bias` with `torch.rand`). The `cart` suite therefore defaults to
+  `--cart-rng-protocol loo`: it captures the RNG state immediately after the
+  model is built and restores it before each dataset, rebuilding the dataloader
+  in the same position the LOO harness does. That is draw-for-draw identical to
+  `_evaluate_single`, so the WikiText CART loss reproduces the LOO `full` row to
+  ~1e-4 instead of differing by ~0.05 nats. `--cart-rng-protocol reseed`
+  re-seeds from scratch per dataset instead — order-invariant across datasets,
+  but *not* comparable with the LOO table.
 - `--limit-val-batches N` caps each dataset at N validation batches (**an
   absolute batch count**). This is required for `arxiv` (78,463 packed
   sequences) and `pubmed` (143,414) which, at the released `batch_size: 1` and
