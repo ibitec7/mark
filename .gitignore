@@ -5,5 +5,9 @@ data/ptb
 data/pubmed
 data/wikitext
 data/lambada
+data/shuffled/
+data/train_shards*/
+data/val_shards/
+data/test_shards/
 models/
 src/__pycache__/

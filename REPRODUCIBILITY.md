@@ -1,19 +1,20 @@
 # Reproducibility supplement
 
-We prepared this note for reviewers who already have the PDF and want to rerun the experiments we actually rely on in the submission, without wading through the rest of the training codebase.
+We prepared this note for reviewers who want to rerun the experiments we actually rely on in the submission, without wading through the rest of the training codebase.
 
-You may download the datasets and model checkpoints from the Huggingface repository we provide below which has been made anonymous to maintain the double blind standard at NeurIPS:
+Everything is public. Datasets and model checkpoints live on the Hugging Face Hub under the `mark-ssm` organization:
 
-1. **Validation Datasets:** https://anonymous-hf.up.railway.app/a/nz5rqu8ztqrr/
-2. **Hypernet checkpoint:** https://anonymous-hf.up.railway.app/a/0l9u81sqha8e/
-3. **Chebyshev Checkpoint:** https://anonymous-hf.up.railway.app/a/r3hb1guqbrgk/
-4. **DCT checkpoint:** https://anonymous-hf.up.railway.app/a/0etrjqgwjx2i/
+1. **Validation datasets:** <https://huggingface.co/datasets/mark-ssm/benchmarks>
+2. **Pretraining mixture** (packed shards): <https://huggingface.co/datasets/mark-ssm/data>
+3. **Hypernet checkpoint:** <https://huggingface.co/mark-ssm/hydra_mark_hypernet>
+4. **Chebyshev checkpoint:** <https://huggingface.co/mark-ssm/hydra_mark_chebyshev>
+5. **DCT checkpoint:** <https://huggingface.co/mark-ssm/hydra_mark_dct>
 
-Download the released Hydra pre-trained checkpoints from this Huggingface repository for the AQS certificate (which is not anonymized since it is not our work): https://huggingface.co/goombalab/hydra
+Download the released Hydra pre-trained checkpoints from the upstream repository for the AQS certificate (that model is not our work): <https://huggingface.co/goombalab/hydra>
 
-If you encounter any issues where the scripts are not working, try pulling the latest source code from the GitHub repository which we have also made anonymous to maintain the double blind standard of NeurIPS. Do note that since you can not clone the repository, you would have to download it as a raw folder or zip file from the following repository link:
+The source code lives at <https://github.com/ibitec7/mark> — clone it rather than downloading a zip, so you can pick up fixes.
 
-Repository Source: https://anonymous.4open.science/r/mark-07B3/README.md
+The exact `hf download` commands and the resulting directory layout are in the main README (§2).
 
 A short map of what matters:
 
@@ -32,6 +33,15 @@ Everything below assumes you cloned this repository and are sitting at its root.
 ### Checkpoints for `src/perplexity.py`
 
 The harness loads a **kernel-specific frozen Hydra base** from a `.pt` file, then overlays the **Lightning adapter checkpoint** for that kernel. We only release the three checkpoints that correspond to the ablation table.
+
+Fetch them straight from the Hub:
+
+```bash
+for k in hypernet chebyshev dct; do
+  hf download mark-ssm/hydra_mark_${k} --local-dir models/hydra_mark_${k}
+done
+hf download goombalab/hydra hydra_bert_23layers.pt --local-dir models
+```
 
 Place these files:
 
@@ -233,12 +243,20 @@ Writes `plots/markov_norm_vs_lag_k4096.png` and `analysis/results/dynamics/marko
 
 ## Lean formalization (optional)
 
-If you want to check the mechanized statement of Proposition 4.1:
+`proofs/` is a standalone Lake project (Lean 4 + Mathlib) that machine-checks the
+formal core of the stability and identifiability claims; it needs no GPU and no Python
+environment. The toolchain is pinned in `lean-toolchain`
+(`leanprover/lean4:v4.28.0`) and Mathlib is pinned to `v4.28.0` in `lakefile.toml` /
+`lake-manifest.json`.
 
 ```bash
 cd proofs
-lake build
+lake exe cache get   # prebuilt Mathlib oleans (~80 s / ~7 GB); without it Mathlib compiles from source (~1 h)
+lake build           # → "Build completed successfully (8030 jobs)"
 ```
+
+See §4 of the README for the theorem-by-theorem map and for the named `axiom`s that
+stand in for the statistical-learning results Mathlib does not yet provide.
 
 ---
 

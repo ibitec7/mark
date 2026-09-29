@@ -1,19 +1,28 @@
-# MaRK: Markov-adapted Recurrent Kernels for Hydra SSM
+# MaRK: Markov-adapted Recurrent Kernels
+
+**Paper** (NeurIPS 2026) · [Project page](https://ibitec7.github.io/mark/) ·
+[arXiv 2601.22157](https://arxiv.org/abs/2601.22157) ·
+[Models & datasets](https://huggingface.co/mark-ssm) ·
+[Reproducibility guide](REPRODUCIBILITY.md)
 
 **MaRK** turns a *non-causal* bidirectional state-space backbone into a usable diffusion
 language model by attaching a lightweight, parameter-efficient adapter that imposes a
 **causal, Markov-structured time kernel** on the SSM transition. Concretely, MaRK
 re-parameterises the five selective-scan parameters of every 23-layer Hydra block
 (`A`, `B`, `C`, `D`, `Δ`) from the token representation itself, and the adapter can be
-instantiated with three interchangeable function families (a **HyperNetwork**, a **Chebyshev polynomial** expansion, or **DCT** fourier basis) all built on the kernel-agnostic low-rank factors shared
-across layers. The model is trained with the CART-weighted diffusion-masking
-(masked-LM) objective on a 14-corpus pretraining mixture, in three stages
-(pretraining → intermediate fine-tuning → task-specific fine-tuning), and this branch
-contains the complete rebuttal/revision package: the three-stage training pipeline and
-its configs, the released adapter checkpoints, and the three ablations — a
-**leave-one-out SSM-parameter ablation** on WikiText, a **CART-weighted validation
-ablation** over six benchmark datasets with multi-seed confidence intervals, and an
-**AdaLN-Zero vs. input-injection vs. MaRK profiling** study on A100.
+instantiated with three interchangeable function families — a **HyperNetwork**, a
+**Chebyshev** polynomial expansion, or a **DCT** Fourier basis — all built on the
+kernel-agnostic low-rank factors shared across layers. The model is trained with the
+CART-weighted diffusion-masking (masked-LM) objective on a 14-corpus pretraining mixture,
+in three stages (pretraining → intermediate fine-tuning → task-specific fine-tuning).
+
+This branch is the public release of the paper's code and evidence: the three-stage
+training pipeline and its configs, the released adapter checkpoints, the datasets, and
+the three ablations — a **leave-one-out SSM-parameter ablation** on WikiText, a
+**CART-weighted validation ablation** over six benchmark datasets with multi-seed
+confidence intervals, and an **AdaLN-Zero vs. input-injection vs. MaRK profiling** study
+on A100 — plus the Lean 4 mechanization of the paper's stability and identifiability
+statements.
 
 ---
 
@@ -27,8 +36,8 @@ ablation** over six benchmark datasets with multi-seed confidence intervals, and
 | Single-pass CART validation harness | `src/perplexity.py` |
 | **All three ablations** (one driver) | `src/ablation.py`, `./run_ablation.sh` |
 | Paper figures / diagnostics | `analysis/` |
-| Lean statement of Proposition 4.1 | `proofs/` |
-| Reviewer-facing supplement | `REPRODUCIBILITY.md` |
+| Lean 4 + Mathlib mechanization (Proposition 4.1 and the stability chain) | `proofs/` |
+| Reviewer-facing supplement | `REPRODUCIBILITY.md`, `PROFILING.md` |
 
 ```text
 mark/
@@ -38,7 +47,8 @@ mark/
 │   ├── train_shards1|2|3/   # per-stage packed training shards
 │   ├── val_shards/          # packed validation shards
 │   └── ablation_results/    # committed ablation outputs (CSV + Markdown + per-seed JSON)
-├── models/                  # checkpoints (not tracked — see §2.2)
+├── models/                  # checkpoints (not tracked — see §2 and §3.2)
+├── proofs/                  # Lean 4 project: Aqs, ParamBounds, ZohStability, OperatorIdentifiability
 ├── src/
 │   ├── main.py              # training entry point (`python -m src.main`)
 │   ├── ablation.py          # `loo` | `cart` | `profiling` | `all` suites
@@ -50,6 +60,7 @@ mark/
 ├── train.sh                 # all 3 kernels × 3 stages, end to end
 ├── train_{dct,hypernet}_all_stages.sh
 ├── run_ablation.sh          # Docker wrapper around src.ablation
+├── Dockerfile.nemo          # GPU training image
 └── REPRODUCIBILITY.md       # reviewer-facing walkthrough
 ```
 
@@ -70,7 +81,7 @@ docker run --rm --gpus all --ipc=host \
 ```
 
 `./run_ablation.sh` wraps the same `docker run` invocation for every ablation suite
-(see §2.4), so you normally do not need to type the mounts by hand.
+(see §3.4), so you normally do not need to type the mounts by hand.
 
 ### Local, with `uv`
 
@@ -86,14 +97,80 @@ All commands below are written for bare metal as `python -m …`; prefix them wi
 
 ---
 
-## 2. Reproducibility
+## 2. Download the released artifacts
 
-### 2.1 Get the data
+Everything the paper needs — adapter checkpoints, benchmark packs, and the packed
+pretraining mixture — is public on the Hub under the
+[`mark-ssm`](https://huggingface.co/mark-ssm) organization. The parent Hydra BERT lives
+upstream in [`goombalab/hydra`](https://huggingface.co/goombalab/hydra).
+
+### 2.1 What is released
+
+| Repository | Type | Contents | Size |
+|------------|------|----------|------|
+| [`mark-ssm/hydra_mark_hypernet`](https://huggingface.co/mark-ssm/hydra_mark_hypernet) | model | HyperNetwork adapter — `best_hydra_mark.ckpt` + `hparams.yaml` | 262 MB |
+| [`mark-ssm/hydra_mark_chebyshev`](https://huggingface.co/mark-ssm/hydra_mark_chebyshev) | model | Chebyshev adapter — `best_hydra_mark.ckpt` + `hparams.yaml` | 290 MB |
+| [`mark-ssm/hydra_mark_dct`](https://huggingface.co/mark-ssm/hydra_mark_dct) | model | DCT adapter — `best_hydra_mark.ckpt` + `hparams.yaml` | 267 MB |
+| [`goombalab/hydra`](https://huggingface.co/goombalab/hydra) | model | upstream parent model `hydra_bert_23layers.pt` | 450 MB |
+| [`mark-ssm/benchmarks`](https://huggingface.co/datasets/mark-ssm/benchmarks) | dataset | the six packed validation packs (`ag_news`, `arxiv`, `lambada`, `ptb`, `pubmed`, `wikitext`) | 1.46 GB |
+| [`mark-ssm/data`](https://huggingface.co/datasets/mark-ssm/data) | dataset | the packed 14-corpus pretraining mixture: `shuffled/` (100 shards), `train_shards1|2|3/` (42/25/3), `val_shards/` (15), `test_shards/` (15) | 17.3 GB |
+
+### 2.2 Download
+
+```bash
+hf download goombalab/hydra hydra_bert_23layers.pt --local-dir models
+
+for k in hypernet chebyshev dct; do
+  hf download mark-ssm/hydra_mark_${k} --local-dir models/hydra_mark_${k}
+done
+
+hf download mark-ssm/benchmarks --repo-type dataset --local-dir data/benchmarks
+hf download mark-ssm/data       --repo-type dataset --local-dir data
+```
+
+If the `hf` CLI is missing, install it with `pip install -U "huggingface_hub[cli]"`.
+Downloads are resumable and cached in `~/.cache/huggingface`; re-running a command
+picks up where it stopped. For the 17.3 GB mixture, `--max-workers 8` (the default) is
+fine, and `pip install hf_transfer` speeds it up further.
+
+### 2.3 What the layout looks like afterwards
+
+```text
+models/
+├── hydra_bert_23layers.pt
+├── hydra_mark_hypernet/best_hydra_mark.ckpt
+├── hydra_mark_chebyshev/best_hydra_mark.ckpt
+└── hydra_mark_dct/best_hydra_mark.ckpt
+data/
+├── benchmarks/{ag_news,arxiv,lambada,ptb,pubmed,wikitext}/*.parquet
+├── shuffled/            # 100 pooled shards
+├── train_shards1|2|3/   # per-stage packed training shards
+├── val_shards/          # packed validation shards
+└── test_shards/         # held-out packed shards
+```
+
+Those are exactly the paths the training, ablation, and analysis code expect, so
+after §2.2 the pipeline is runnable. `models/` and the downloaded `data/` subtrees are
+gitignored — 18 GB of artifacts stay out of your commits.
+
+> Downloading the released packs is the intended path. §3.1 also documents how to
+> regenerate the same mixture and packs from raw corpora if you want to rebuild them
+> rather than fetch them.
+
+---
+
+## 3. Reproducibility
+
+### 3.1 Get the data
 
 Everything the paper reports is driven by three kinds of data: **benchmark packs** for
 the ablations, the **pretraining shard mixture**, and **WikiText**.
 
 #### (a) Benchmark packs — `data/benchmarks/`
+
+```bash
+hf download mark-ssm/benchmarks --repo-type dataset --local-dir data/benchmarks
+```
 
 Every ablation dataset is a directory of parquet files whose only required column is
 `input_ids` (packed, fixed-length token chunks; extra columns are stripped on load):
@@ -107,11 +184,9 @@ data/benchmarks/pubmed/*.parquet
 data/benchmarks/wikitext/*.parquet
 ```
 
-Download the released validation-dataset bundle from the anonymous Hugging Face
-repository listed in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) and unpack it so the
-layout above exists. Datasets are discovered by directory scan, so a subset works
-too — the harness simply evaluates what it finds. All packs were tokenized with
-`bert-base-uncased`; the first run downloads that tokenizer unless it is cached.
+Datasets are discovered by directory scan, so a subset works too — the harness simply
+evaluates what it finds. All packs were tokenized with `bert-base-uncased`; the first
+run downloads that tokenizer unless it is cached.
 
 To build a pack yourself from raw text, put the raw parquet files (with a `text`
 column) under the dataset directory and run the packer in `src/prepare_data.py`
@@ -120,11 +195,17 @@ tokenizes, chunks to `seq_length=4096`, stamps CLS/SEP, and writes `packed_*.par
 
 #### (b) Pretraining mixture — `data/train_shards*`
 
-`src/utils.py::download_dataset` streams the 14 corpora below straight from the Hugging
-Face Hub, shuffles each with seed 42, tokenizes with `bert-base-uncased`, packs to
-`max_length=4096`, and writes 10 000-row shards:
+The released mixture is one `hf download` away (17.3 GB, 201 parquet files):
 
+```bash
+hf download mark-ssm/data --repo-type dataset --local-dir data
 ```
+
+Alternatively, regenerate it from the Hub. `src/utils.py::download_dataset` streams the
+14 corpora below, shuffles each with seed 42, tokenizes with `bert-base-uncased`, packs
+to `max_length=4096`, and writes 10 000-row shards:
+
+```text
 common-pile/stackexchange_filtered      common-pile/project_gutenberg_filtered
 common-pile/libretexts_filtered         common-pile/arxiv_papers_filtered
 common-pile/youtube_filtered            common-pile/news_filtered
@@ -178,9 +259,11 @@ python -m src.data
 `src/prepare_data.py` uses. `src/repair_data.py` strips incompatible embedded Hugging
 Face parquet metadata from third-party shards if a `load_dataset` call chokes on it.
 
-### 2.2 Get the checkpoints
+### 3.2 Get the checkpoints
 
-Place these under `models/`:
+The released adapters from §2.2 already sit in the layout the code expects
+(`models/hydra_mark_<kernel>/best_hydra_mark.ckpt`), so no manual staging is needed.
+What the pipeline consumes:
 
 | Path | Meaning |
 |------|---------|
@@ -211,7 +294,7 @@ can also be overridden without touching code:
 python -m src.ablation --checkpoint-dir chebyshev=/path/to/ckpts
 ```
 
-### 2.3 Run the training
+### 3.3 Run the training
 
 Each stage copies its config over `configs/training_config.yaml` and runs
 `python -m src.main`, which loads `weights_path`, builds the trainer at
@@ -245,7 +328,7 @@ cp -r ./checkpoints/hydra_mark ./checkpoints/hydra_mark_hypernet_stage1
 Notes:
 
 - The **stage-1 `weights_path` must exist first** — create
-  `models/hydra_<kernel>_mark.pt` as in §2.2, or `python -m src.main` fails on
+  `models/hydra_<kernel>_mark.pt` as in §3.2, or `python -m src.main` fails on
   `torch.load`.
 - **W&B** is initialised at the top of `src/main.py` under the `wandb` key of the
   config. It is optional: if `wandb.init` fails, the run logs a warning and continues
@@ -254,10 +337,10 @@ Notes:
   `total_steps: 40000` in the stage configs are the released A100 settings; multi-GPU
   is `trainer.devices: -1` with `strategy: ddp`.
 - CART weighting is on for every stage (`cart: true`, `cart_p: 0.45`,
-  `cart_scale: 1.0`) — this is the objective the evaluations in §2.4 use.
+  `cart_scale: 1.0`) — this is the objective the evaluations in §3.4 use.
 - Training logs to `logs/` and `data/training/hydra_train_metrics.parquet`.
 
-### 2.4 Run the ablations
+### 3.4 Run the ablations
 
 `src/ablation.py` is the single driver for all three ablations. `--suite` picks one,
 `--suite all` runs them in sequence; `--help` lists every flag.
@@ -378,7 +461,7 @@ Environment overrides: `IMAGE` (default `mark:latest`), `EXPERIMENT_DIR`
 (default `~/Desktop/experiment`), `REPO` (default: the script's directory), and
 `NO_BUILD=1` to fail instead of building the image when it is missing.
 
-### 2.5 Figures and diagnostics
+### 3.5 Figures and diagnostics
 
 ```bash
 python -m analysis.aqs_certificate                      # AQS certificate
@@ -390,13 +473,88 @@ python -m analysis.dynamics_analysis                    # Markov norm vs. lag (K
 
 They write `plots/*.png` and audit files under `analysis/results/`. The AQS
 certificate and the dynamics figure read `A_log` / `dt_bias` out of
-`models/hydra_bert_23layers.pt` and the adapter checkpoints listed in §2.2.
-
-The Lean statement of Proposition 4.1 is in `proofs/` (`cd proofs && lake build`).
+`models/hydra_bert_23layers.pt` and the adapter checkpoints listed in §3.2.
 
 ---
 
-## 3. Results shipped in this branch
+## 4. Lean proofs
+
+`proofs/` is a self-contained [Lake](https://leanprover-community.github.io/) project
+(Lean 4 + Mathlib) that machine-checks the paper's stability and identifiability
+claims. It is independent of the Python pipeline: no GPU, no Python environment, no
+access to the training data.
+
+### 4.1 Build it
+
+```bash
+cd proofs
+lake exe cache get     # fetch prebuilt Mathlib oleans (~80 s, ~7 GB on our machine)
+lake build             # 8030 jobs; ~6 s once the cache is in place
+```
+
+Expected output ends with:
+
+```text
+Build completed successfully (8030 jobs).
+```
+
+Requirements and pins:
+
+- `elan` + `lake` (install guide: <https://leanprover-community.github.io/get_started.html>).
+  `lean-toolchain` pins **`leanprover/lean4:v4.28.0`**; `elan` fetches it automatically.
+- `lakefile.toml` requires **Mathlib `v4.28.0`**, and `lake-manifest.json` pins the exact
+  revision for Mathlib and its transitive dependencies.
+- `lake exe cache get` is what makes this fast: it downloads `*.olean` files that match
+  that exact pin. **Skipping it compiles Mathlib from source** — roughly an hour on a
+  laptop, and the reason a cold `lake build` looks like it hangs on `[1430/8030]`.
+  Re-run it after any bump of the Mathlib pin.
+- The same build runs in CI on every push
+  (`.github/workflows/lean_action_ci.yml`, `leanprover/lean-action@v1`), so a green
+  badge there means the pinned toolchain reproduces the build from scratch.
+
+To check a single file without the full build:
+
+```bash
+lake env lean Proofs/ZohStability.lean
+```
+
+### 4.2 What is proved
+
+17 theorems, no `sorry` anywhere.
+
+| Module | Statement | Theorems |
+|--------|-----------|----------|
+| `Proofs/Aqs.lean` | Affine Quadratic Stability: a common Lyapunov matrix `P` with `P - A(v)ᵀ P A(v) - εI ⪰ 0` for every parameter value `v` forces strict energy decay on every non-zero state | `IsAQS` (definition), `aqs_implies_decay` |
+| `Proofs/ParamBounds.lean` | every MaRK modulation is confined to the hyper-rectangle `[θ_base − α, θ_base + α]`, i.e. `tanh` boundedness gives a finite set of LMI vertices to test | `mark_parameter_strictly_bounded` |
+| `Proofs/ZohStability.lean` | the constructive ZOH chain `A_log' = A_log + β·tanh(ψ(c))` → `A_cont = −exp(A_log')` → `Δ = softplus(·)` → `Ā = exp(A_cont·Δ)` lands every discrete eigenvalue in `(0, 1)`, so `ρ(Ā) < 1` and `P = I` is a valid common Lyapunov function | `neg_exp_is_neg`, `exp_neg_in_unit`, `zoh_in_unit_interval`, `mark_zoh_stable`, `mark_zoh_positive`, `lyapunov_decrease_negative` |
+| `Proofs/OperatorIdentifiability.lean` | the extended Markov operator `H_k(c) = C(c)A(c)^k B(c)` (+ direct term `D`), the coordinate-invariant equivalence relation on LPV realizations, and the geometric decay of Markov parameters under an AQS certificate | `ExtendedMarkovOperator.ext'`, `markovEquivalent_refl`, `markovEquivalent_symm`, `markovEquivalent_trans`, `markovEquivalent_is_equivalence`, `markovEquivalent_iff_extended_operator_eq`, `lemma_B1_coordinate_invariant_equivalence_class`, `lemma_B2_markov_geometric_decay`, `proposition_4_1_operator_convergence` |
+
+`proposition_4_1_operator_convergence` is the paper-level composition: it returns the
+Markov-operator equality for equivalent realizations together with the
+`squaredOperatorError ≤ C/(κ √N)` rate, assembled from the proved algebraic lemma and
+the statistical assumptions below.
+
+### 4.3 What is assumed, and why
+
+The empirical-process steps the paper imports from the statistical learning literature
+are explicit, named `axiom`s rather than hidden inside the final theorem — they are not
+in Mathlib today, and leaving them visible is the honest boundary of the mechanization:
+
+| Axiom | Role |
+|-------|------|
+| `aqs_yields_decay_certificate` | the finite-dimensional Lyapunov-norm argument turning an AQS inequality into `‖A(c)^k‖ ≤ M_A ρ^k` |
+| `lemma_B3_geometric_decay_implies_beta_mixing` | Pham–Tran / Yu-style absolute regularity from geometric decay |
+| `lemma_B4_dependent_rademacher_complexity` | dependent Rademacher bound for the squared-loss class |
+| `uniform_convergence_excess_risk` | uniform convergence + ERM optimality → high-probability excess risk |
+| `persistent_excitation_controls_operator_error` | persistent excitation transfers excess risk to squared operator error |
+
+Everything else — the AQS definition and its decay consequence, parameter boundedness,
+the whole ZOH eigenvalue chain, the equivalence relation and its coordination
+invariance, and the Markov decay bound — is proved outright.
+
+---
+
+## 5. Results shipped in this branch
 
 `data/ablation_results/` contains the outputs of the runs described above.
 
@@ -420,7 +578,7 @@ per-seed JSON behind the tables.
 
 ---
 
-## 4. Tests
+## 6. Tests
 
 ```bash
 pytest tests/                    # or: pytest tests/test_cart.py tests/test_transfer.py
@@ -431,10 +589,26 @@ training loop, and a `src/perplexity.py` smoke test that runs off `data/benchmar
 
 ---
 
-## 5. Reference
+## 7. Further documentation
 
 - [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) — the reviewer-facing walkthrough, with the
   download links for the released datasets and checkpoints, and the exact commands
   behind each table and figure.
 - [`PROFILING.md`](PROFILING.md) — the PyTorch profiler utilities in `src/performance.py`.
 - [`analysis/README.md`](analysis/README.md) — which analysis generators are paper-facing.
+- [Project page](https://ibitec7.github.io/mark/) — figures, the paper, and the citation.
+
+---
+
+## 8. Citation
+
+```bibtex
+@inproceedings{ibrahim2026mark,
+  author={Syed Ibrahim Omer, Ginny Y. Wong, Xiangyu Zhao},
+  booktitle={Advances in Neural Information Processing Systems},
+  title={MaRK: Markov-adapted Recurrent Kernels for Dynamic Operator Conditioning in State Space Models},
+  url={https://neurips.cc},
+  volume={39, Main Conference},
+  year={2026},
+}
+```
