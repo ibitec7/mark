@@ -4,10 +4,8 @@
 language model by attaching a lightweight, parameter-efficient adapter that imposes a
 **causal, Markov-structured time kernel** on the SSM transition. Concretely, MaRK
 re-parameterises the five selective-scan parameters of every 23-layer Hydra block
-(`A`, `B`, `C`, `Δ`, `D`) from the token representation itself, and the adapter can be
-instantiated with three interchangeable bases — a **HyperNetwork** (`n_freqs`,
-`mark_mlp_dim`), a **Chebyshev polynomial** expansion (`degree`), or a **DCT** basis
-(`L_timepoints`) — all built on the kernel-agnostic low-rank factors (`rank`) shared
+(`A`, `B`, `C`, `D`, `Δ`) from the token representation itself, and the adapter can be
+instantiated with three interchangeable function families (a **HyperNetwork**, a **Chebyshev polynomial** expansion, or **DCT** fourier basis) all built on the kernel-agnostic low-rank factors shared
 across layers. The model is trained with the CART-weighted diffusion-masking
 (masked-LM) objective on a 14-corpus pretraining mixture, in three stages
 (pretraining → intermediate fine-tuning → task-specific fine-tuning), and this branch
