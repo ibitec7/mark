@@ -8,7 +8,7 @@ Project website for **MaRK: Markov-adapted Recurrent Kernels for Dynamic Operato
 
 - **Paper** (OpenReview): <https://openreview.net/pdf?id=yIjFWwvG7b>
 - **Code**: <https://github.com/ibitec7/mark>
-- **arXiv**: <https://arxiv.org/abs/2601.22157> (coming soon)
+- **arXiv**: <https://arxiv.org/abs/2601.22157>
 
 ## About
 
