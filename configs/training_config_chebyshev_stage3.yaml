@@ -1,5 +1,5 @@
 # Training Configurations
-batch_size: 32                  # Batch size set to 4/8 for the A100 GPU
+batch_size: 112                  # Batch size set to 4/8 for the A100 GPU
 epochs: 3
 stage: 3                    # Training stage: 1 - Pretraining, 2 - Intermediate Fine-tuning, 3 - Task-specific Fine-tuning 
 unfrozen_ratio: 0.3          # Ratio of Hydra layers to unfreeze during stage 2. Set to 0.3 to unfreeze last 30% layers. 
@@ -35,8 +35,8 @@ lr_scheduler:
   type: "cosine"          # choices: cosine | poly | inverse_sqrt | plateau | none
 
   # !! Remember to adjust total_steps and warmup_steps according to batch_size and epochs.
-  warmup_steps: 2000
-  total_steps: 40000      # approximate (epochs * steps_per_epoch)
+  warmup_steps: 720
+  total_steps: 14400      # approximate (epochs * steps_per_epoch)
   min_lr_ratio: 0.1
   polynomial:
     end_lr_ratio: 0.0
