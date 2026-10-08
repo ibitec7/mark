@@ -658,30 +658,6 @@ a:focus {
    MaRK: table slides, paper figures, mobile refinements
    ------------------------------------------------------------------ */
 
-/* Standalone figure rendered at full width, with a caption below */
-.paper-figure {
-  margin: 1.5rem 0 0;
-}
-
-.paper-figure img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.paper-figure figcaption {
-  margin: 0.75rem auto 0;
-  max-width: 900px;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-.paper-figure figcaption em {
-  font-style: normal;
-}
-
 /* "Swipe" hint, only shown on narrow screens */
 .swipe-hint {
   display: none;
@@ -737,15 +713,6 @@ a:focus {
   .results-carousel .subtitle {
     font-size: 0.92rem !important;
     line-height: 1.55;
-  }
-
-  .paper-figure {
-    margin-top: 1.25rem;
-  }
-
-  .paper-figure figcaption {
-    font-size: 0.9rem;
-    text-align: left;
   }
 
   .key-stat .label {

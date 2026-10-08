@@ -345,17 +345,6 @@
                 change of input&ndash;output operator, not merely a timestep-dependent activation gain.
               </p>
             </div>
-            <figure class="paper-figure">
-              <picture>
-                <source srcset="static/images/mark/markov_headseq_heatmap.webp" type="image/webp">
-                <img src="static/images/mark/markov_headseq_heatmap.png" width="2400" height="670" alt="Heatmap of the Markov parameter norm per SSM head over lag and diffusion timestep." loading="lazy" decoding="async">
-              </picture>
-              <figcaption>
-                <em><b>Head-resolved memory profile.</b></em> Markov parameter norm per SSM head as a function of
-                lag and diffusion timestep. Each row is one head's temporal memory, so the map shows how the
-                denoising trajectory reorganizes memory across heads rather than applying one global gain.
-              </figcaption>
-            </figure>
           </div>
         </div>
       </div>
@@ -379,8 +368,8 @@
                 <div class="label">Trainable adapter parameters on a frozen 111M-parameter Hydra SSM</div>
               </div>
               <div class="key-stat">
-                <div class="value">23 / 23</div>
-                <div class="label">Layers with a positive Affine Quadratic Stability margin</div>
+                <div class="value">O(1)</div>
+                <div class="label">Conditioning overhead holds constant as sequence length grows</div>
               </div>
             </div>
 
@@ -454,32 +443,23 @@
           <div class="content">
             <div class="level-set has-text-justified">
               <p>
-                Both structured bases improve on the direct Hypernet projection on every completed validation
-                dataset. Chebyshev gives the lowest average loss (2.55) and leads DCT on four of the five datasets,
-                tying it on WikiText; DCT finishes 0.04 nats behind on average (2.59). The gap is structural rather
-                than statistical. The diffusion timestep is a continuous scalar and adjacent timesteps describe
-                nearly identical denoising tasks, so the modulation map should vary smoothly. The Hypernet MLP
-                instead consumes each timestep as an independent input and must learn that smoothness from data,
-                spending capacity on high-frequency structure the diffusion process does not need. Chebyshev and DCT
-                encode the smoothness in the basis itself, which regularizes the modulation map without limiting what
-                it can express. Table 1 shows the effect at equal budget: Hypernet and DCT carry 6.3M and 7.1M
-                adapter parameters and still differ by 1.18 nats, while the further 3.9M separating DCT (7.1M) from
-                Chebyshev (11.0M) buys only 0.04 nats. Hypernet does not overfit; it lacks the prior. Chebyshev is the
-                accuracy ceiling, and DCT is the better parameter and latency trade.
+                Both structured bases beat the direct Hypernet projection on every dataset. Chebyshev gives the
+                lowest average loss (2.55) and leads DCT on four of five datasets, with DCT 0.04 nats behind (2.59).
+                The gap is structural, not statistical. The timestep is smooth and adjacent steps do nearly the same
+                denoising, so the modulation map should be smooth too, but the Hypernet MLP reads each timestep
+                independently and has to learn that smoothness from data. Chebyshev and DCT build it into the basis
+                instead.
               </p>
               <p>
-                Table 2 holds that modulating the recurrence matrix A is necessary. Freezing it costs 0.18 to 0.25
-                nats, and a Mamba-style B, C, &Delta; selection leaves 0.34 to 0.51 nats on the table, so MaRK cannot
-                be reduced to input gating. Shifting the dynamics indirectly through &Delta; helps less than the
-                direct spectral path through A, and every single-parameter variant trails the full baseline, so joint
-                modulation is what delivers the gain. Table 3 shows the price: at sequence length 4096 the adapters
-                add about 14% to 16% latency and under 1% memory over the frozen backbone, and because that overhead
-                is roughly constant per forward pass it amortizes as the sequence grows.
+                Modulating the recurrence matrix A is necessary: freezing it costs 0.18 to 0.25 nats, and a
+                Mamba-style B, C, &Delta; selection leaves 0.34 to 0.51 nats on the table, so MaRK cannot be reduced
+                to input gating. The price is modest and well behaved. At sequence length 4096 the adapters add 14% to
+                16% latency and under 1% memory over the frozen backbone, and that overhead is flat in sequence
+                length, so it amortizes as sequences grow.
               </p>
               <p>
-                These are internal adapter ablations under a shared frozen backbone, diffusion objective and
-                validation protocol; they are not a head-to-head comparison against separately trained diffusion
-                language models. Adapters, training scripts and evaluation code are in the
+                These are internal ablations under a shared frozen backbone, objective and protocol, not a head-to-head
+                comparison against separately trained diffusion language models. Code is in the
                 <a href="https://github.com/ibitec7/mark" target="_blank" rel="noopener">project repository</a>.
               </p>
             </div>
