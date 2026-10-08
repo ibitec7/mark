@@ -94,14 +94,14 @@ body {
 }
 
 .hero-body {
-  padding: 5rem 1.5rem;
+  padding: 3.75rem 1.5rem;
 }
 
 /* Add clear spacing between sections */
 section.hero + section.hero,
 section.section + section.hero,
 section.hero + section.section {
-  margin-top: 4rem;
+  margin-top: 3rem;
 }
 
 .teaser .hero-body {
@@ -118,7 +118,7 @@ section.hero + section.section {
     font-family: 'Inter', sans-serif !important;
     font-weight: 800 !important;
     color: var(--text-primary) !important;
-    margin-bottom: 2rem !important;
+    margin-bottom: 1.5rem !important;
     line-height: 1.15 !important;
     /* Wrap long multi-line titles instead of forcing one overflowing line */
     white-space: normal;
@@ -133,7 +133,7 @@ section.hero + section.section {
 .publication-authors {
     font-family: 'Inter', sans-serif !important;
     font-weight: 500;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.125rem;
 }
 
 .publication-authors a {
@@ -172,7 +172,7 @@ section.hero + section.section {
 
 .results-carousel {
   overflow: hidden;
-  padding: 1rem 0 2.5rem; /* bottom space reserved for the pagination dots */
+  padding: 0.75rem 0 1.875rem; /* bottom space reserved for the pagination dots */
 }
 
 /* Centre each figure vertically inside its slide, and strip every card
@@ -186,7 +186,7 @@ section.hero + section.section {
 .results-carousel .item {
   margin: 0;
   overflow: visible;
-  padding: 1.25rem 1.5rem;
+  padding: 0.94rem 1.5rem;
   font-size: 0;
   background: transparent;
   border: 0;
@@ -208,7 +208,7 @@ section.hero + section.section {
 .results-carousel .subtitle {
   font-size: 1rem !important;
   color: var(--text-secondary);
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   font-weight: 500;
 }
 
@@ -233,7 +233,7 @@ section.hero + section.section {
   font-weight: 700 !important;
   font-size: 2.3rem !important;
   color: var(--text-primary);
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.75rem !important;
   position: relative;
   padding-bottom: 0.5rem;
 }
@@ -256,14 +256,14 @@ section.hero + section.section {
 }
 
 .content.has-text-justified p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.125rem;
 }
 
 /* Footer Improvements */
 .footer {
   background: var(--background-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 3rem 1.5rem;
+  padding: 2.25rem 1.5rem;
 }
 
 .footer .content {
@@ -532,7 +532,7 @@ a:focus {
   line-height: 1.75;
   color: var(--text-secondary);
   max-width: 830px;
-  margin: 1.75rem auto 0;
+  margin: 1.3rem auto 0;
   font-weight: 500;
 }
 
@@ -552,7 +552,7 @@ a:focus {
 
 /* Teaser image: plain, so its own background flushes into the page background */
 .teaser-figure {
-  margin: 2.25rem 0 0;
+  margin: 1.7rem 0 0;
 }
 
 .teaser-figure img {
@@ -569,8 +569,8 @@ a:focus {
 .key-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin: 1rem 0 2.5rem;
+  gap: 1.125rem;
+  margin: 0.75rem 0 1.875rem;
 }
 
 .key-stat {
@@ -578,7 +578,7 @@ a:focus {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 1.5rem 1.25rem;
+  padding: 1.125rem 1.25rem;
   text-align: center;
 }
 
@@ -652,3 +652,118 @@ a:focus {
   }
 }
 
+
+
+/* ------------------------------------------------------------------
+   MaRK: table slides, paper figures, mobile refinements
+   ------------------------------------------------------------------ */
+
+/* Standalone figure rendered at full width, with a caption below */
+.paper-figure {
+  margin: 1.5rem 0 0;
+}
+
+.paper-figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.paper-figure figcaption {
+  margin: 0.75rem auto 0;
+  max-width: 900px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.paper-figure figcaption em {
+  font-style: normal;
+}
+
+/* "Swipe" hint, only shown on narrow screens */
+.swipe-hint {
+  display: none;
+}
+
+/* Table slides: keep the caption tight under the image */
+.results-carousel .item.table-slide .table-scroll {
+  line-height: 0;
+}
+
+.results-carousel .item.table-slide img {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  /* Justified text reads badly on narrow columns */
+  .content.has-text-justified {
+    text-align: left;
+  }
+
+  .results-carousel .item.table-slide {
+    padding: 0.75rem 0.6rem;
+  }
+
+  /* The tables are wide: let them scroll horizontally at a legible size
+     instead of shrinking to unreadable text. */
+  .results-carousel .item.table-slide .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .results-carousel .item.table-slide .table-scroll img {
+    width: 720px;
+    min-width: 720px;
+    max-width: none;
+    margin: 0;
+  }
+
+  .swipe-hint {
+    display: block;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin: 0.5rem 0 0;
+  }
+
+  .results-carousel .subtitle {
+    font-size: 0.92rem !important;
+    line-height: 1.55;
+  }
+
+  .paper-figure {
+    margin-top: 1.25rem;
+  }
+
+  .paper-figure figcaption {
+    font-size: 0.9rem;
+    text-align: left;
+  }
+
+  .key-stat .label {
+    font-size: 0.9rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .hero-body {
+    padding: 1.4rem 0.8rem;
+  }
+
+  .publication-title {
+    font-size: 1.4rem !important;
+  }
+
+  .results-carousel .item.table-slide .table-scroll img {
+    width: 640px;
+    min-width: 640px;
+  }
+}
